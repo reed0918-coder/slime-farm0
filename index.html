@@ -1,0 +1,3222 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="artifact-type" content="tool">
+  <meta name="design-style" content="sticker">
+  <title>スライム牧場 - 捕まえて合成・進化！放置育成シミュレーション</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Zen+Maru+Gothic:wght@500;700;900&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@1.43.0/dist/umd/lucide.min.js"></script>
+
+  <style>
+    :root {
+      color-scheme: light;
+
+      /* Page and surfaces - Sticker style */
+      --background: #fef7ff;
+      --surface-container-low: #ffffff;
+      --surface-container: #f8eef8;
+      --surface-container-high: #f2e8f2;
+
+      /* Ink */
+      --on-surface: #2e1a28;
+      --on-surface-variant: #604868;
+
+      /* Rules */
+      --outline: #907898;
+      --outline-variant: #dcc8e0;
+
+      /* Accents */
+      --primary: #c2207f;
+      --on-primary: #ffffff;
+      --primary-container: #f080c0;
+      --on-primary-container: #2e1a28;
+      --secondary: #7c52aa;
+      --tertiary: #0096cc;
+      --error: #c53030;
+      --on-error: #ffffff;
+      --positive: #2e8b57;
+      --warning: #e67e22;
+      --focus: #c2207f;
+
+      /* Elemental colors */
+      --grass-color: #3bb143;
+      --water-color: #2b82d9;
+      --fire-color: #e64a19;
+      --special-color: #9c27b0;
+
+      /* Data series */
+      --data-1: #c2207f;
+      --data-2: #7c52aa;
+      --data-3: #0096cc;
+      --data-4: #d96a00;
+      --data-context: #c8b8d0;
+
+      /* Fonts */
+      --font-headline: 'Zen Maru Gothic', 'DM Sans', sans-serif;
+      --font-body: 'Zen Maru Gothic', 'DM Sans', sans-serif;
+      --font-label: 'Zen Maru Gothic', 'DM Sans', sans-serif;
+
+      /* Shape */
+      --rounded-sm: 0.5rem;
+      --rounded: 1rem;
+      --rounded-lg: 1.5rem;
+      --rounded-full: 9999px;
+
+      /* Spacing scale */
+      --space-xs: 0.25rem;
+      --space-sm: 0.5rem;
+      --space-md: 1rem;
+      --space-lg: 1.5rem;
+      --space-xl: 2.5rem;
+      --space-2xl: 4rem;
+
+      /* Style effects */
+      --shadow-pink: 0 4px 16px rgb(224 64 160 / 0.16);
+      --shadow-pink-deep: 0 10px 24px rgb(224 64 160 / 0.25);
+      --shadow-soft: 0 4px 14px rgba(46, 26, 40, 0.08);
+      --shadow-hover: 0 6px 18px rgba(46, 26, 40, 0.14);
+      --pop-scale: scale(1.03);
+      --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+      --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+      --dur-micro: 120ms;
+      --dur-short: 220ms;
+      --dur-long: 420ms;
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow-x: clip;
+      background-color: var(--background);
+      color: var(--on-surface);
+      font-family: var(--font-body);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    button {
+      font-family: inherit;
+      border: none;
+      background: none;
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    button:focus-visible {
+      outline: 3px solid var(--focus);
+      outline-offset: 2px;
+    }
+
+    /* Layout Frame */
+    .app-wrapper {
+      max-width: 980px;
+      margin: 0 auto;
+      padding: var(--space-sm) var(--space-sm) var(--space-2xl);
+    }
+
+    /* News Banner */
+    .sf-news {
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+      margin-bottom: var(--space-sm);
+      padding: 0.4rem 0.8rem;
+      background: linear-gradient(135deg, #fff9db 0%, #fff3bf 100%);
+      border: 2px solid #ffd43b;
+      border-radius: var(--rounded);
+      box-shadow: var(--shadow-soft);
+      font-size: 0.82rem;
+      color: #7b5800;
+    }
+    .sf-news-badge {
+      flex: none;
+      background: #f59f00;
+      color: #fff;
+      font-weight: 900;
+      font-size: 0.72rem;
+      padding: 0.1rem 0.5rem;
+      border-radius: var(--rounded-full);
+    }
+    .sf-news-text {
+      flex: 1;
+      min-width: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .sf-news-close {
+      flex: none;
+      width: 1.5rem;
+      height: 1.5rem;
+      border-radius: var(--rounded-full);
+      background: rgba(0,0,0,0.06);
+      display: grid;
+      place-items: center;
+      color: #7b5800;
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+    .sf-news-close:hover {
+      background: rgba(0,0,0,0.12);
+    }
+
+    /* Main Container */
+    .game-frame {
+      background: var(--surface-container-low);
+      border-radius: var(--rounded-lg);
+      box-shadow: var(--shadow-pink-deep);
+      border: 2px solid var(--outline-variant);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    @media (min-width: 860px) {
+      .game-frame {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 350px;
+      }
+    }
+
+    /* Left Side: Game Scenes & HUD */
+    .sf-left {
+      display: flex;
+      flex-direction: column;
+      background: #faf4fc;
+      border-right: 1px solid var(--outline-variant);
+    }
+
+    /* HUD Bar */
+    .sf-hud {
+      display: grid;
+      grid-template-columns: 1.1fr 1fr 1fr auto;
+      gap: var(--space-xs);
+      padding: var(--space-sm);
+      background: var(--surface-container-low);
+      border-bottom: 2px solid var(--outline-variant);
+      font-variant-numeric: tabular-nums;
+      align-items: center;
+    }
+    .sf-stat {
+      background: #fff0f6;
+      border: 1.5px solid #fcc2d7;
+      border-radius: var(--rounded);
+      padding: 0.35rem 0.6rem;
+      min-width: 0;
+    }
+    .sf-stat small {
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: var(--primary);
+    }
+    .sf-stat b {
+      display: block;
+      font-size: 1.05rem;
+      font-weight: 900;
+      color: var(--on-surface);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .sf-stat-income {
+      background: #e7f5ff;
+      border-color: #a5d8ff;
+    }
+    .sf-stat-income small {
+      color: #1971c2;
+    }
+    .sf-stat-net {
+      background: #ebfbee;
+      border-color: #b2f2bb;
+    }
+    .sf-stat-net small {
+      color: #2b8a3e;
+    }
+    .sf-unit {
+      font-size: 0.72rem;
+      font-weight: 600;
+      margin-left: 1px;
+    }
+    .sf-sound-btn {
+      width: 2.2rem;
+      height: 2.2rem;
+      border-radius: var(--rounded-full);
+      background: var(--surface-container);
+      border: 1.5px solid var(--outline-variant);
+      display: grid;
+      place-items: center;
+      color: var(--on-surface-variant);
+      transition: transform var(--dur-micro) var(--ease-bounce);
+    }
+    .sf-sound-btn:hover {
+      transform: var(--pop-scale);
+      background: var(--surface-container-high);
+    }
+
+    /* Scene Navigation Tabs */
+    .sf-scene-tabs {
+      display: flex;
+      gap: var(--space-xs);
+      padding: var(--space-xs) var(--space-sm);
+      background: var(--surface-container);
+      border-bottom: 1.5px solid var(--outline-variant);
+    }
+    .sf-scene-btn {
+      flex: 1;
+      padding: 0.5rem 0.2rem;
+      border-radius: var(--rounded-full);
+      background: var(--surface-container-low);
+      border: 1.5px solid transparent;
+      color: var(--on-surface-variant);
+      font-size: 0.85rem;
+      font-weight: 900;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      transition: all var(--dur-short) var(--ease-bounce);
+    }
+    .sf-scene-btn:hover {
+      transform: translateY(-1px);
+      color: var(--primary);
+    }
+    .sf-scene-btn.active {
+      background: var(--primary);
+      color: #ffffff;
+      box-shadow: 0 3px 8px rgba(194, 32, 127, 0.35);
+      border-color: #a6146a;
+    }
+    .sf-badge-count {
+      background: #d6412a;
+      color: #fff;
+      font-size: 0.65rem;
+      padding: 0 0.35rem;
+      border-radius: var(--rounded-full);
+      line-height: 1.4;
+    }
+
+    /* Stage Area (Canvas/Grid) */
+    .sf-stage-container {
+      position: relative;
+      background: radial-gradient(circle at 50% 30%, #eefbf0 0%, #c8f2cb 100%);
+      border-bottom: 2px solid var(--outline-variant);
+      min-height: 340px;
+      display: flex;
+      flex-direction: column;
+      user-select: none;
+      touch-action: none;
+    }
+
+    /* Ranch Scene: 4x4 Grid */
+    .sf-ranch-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      grid-template-rows: repeat(4, 1fr);
+      gap: 6px;
+      padding: 8px;
+      flex: 1;
+      min-height: 330px;
+    }
+
+    .sf-cell {
+      position: relative;
+      background: rgba(255, 255, 255, 0.7);
+      border: 2px dashed rgba(60, 140, 70, 0.35);
+      border-radius: var(--rounded);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: transform var(--dur-micro) var(--ease-bounce), border-color var(--dur-micro);
+    }
+    .sf-cell:hover {
+      background: rgba(255, 255, 255, 0.95);
+      border-color: var(--primary);
+    }
+    .sf-cell.selected {
+      background: #fff0f6;
+      border: 2.5px solid var(--primary);
+      box-shadow: 0 0 0 3px rgba(194, 32, 127, 0.25);
+    }
+    .sf-cell.drop-target {
+      background: #fff9db !important;
+      border: 2.5px solid #fab005 !important;
+      transform: scale(1.04);
+    }
+
+    .sf-slime-wrapper {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+    }
+    .sf-slime-svg {
+      width: 54px;
+      height: 54px;
+      filter: drop-shadow(0 3px 4px rgba(0,0,0,0.15));
+      animation: slime-idle 2.4s ease-in-out infinite;
+      transform-origin: bottom center;
+    }
+    @keyframes slime-idle {
+      0%, 100% { transform: scale(1, 1); }
+      50% { transform: scale(1.07, 0.93) translateY(2px); }
+    }
+
+    .sf-cell-name {
+      font-size: 0.68rem;
+      font-weight: 900;
+      color: var(--on-surface);
+      background: rgba(255, 255, 255, 0.85);
+      padding: 0.05rem 0.35rem;
+      border-radius: var(--rounded-full);
+      margin-top: 1px;
+      white-space: nowrap;
+      pointer-events: none;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+    }
+
+    .sf-mood-icon {
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      font-size: 0.82rem;
+      line-height: 1;
+    }
+    .sf-shiny-badge {
+      position: absolute;
+      top: 2px;
+      right: 3px;
+      font-size: 0.82rem;
+      animation: spin-sparkle 3s linear infinite;
+    }
+    @keyframes spin-sparkle {
+      0% { transform: rotate(0deg) scale(1); }
+      50% { transform: rotate(180deg) scale(1.25); }
+      100% { transform: rotate(360deg) scale(1); }
+    }
+
+    /* Wild Field Scene */
+    .sf-field-view {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at 50% 40%, #e2f7d8 0%, #b8e6a8 100%);
+      padding: var(--space-sm);
+      display: flex;
+      flex-direction: column;
+    }
+    .sf-field-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: var(--space-xs);
+    }
+    .sf-field-selector {
+      display: flex;
+      gap: 4px;
+      flex-wrap: wrap;
+    }
+    .sf-field-chip {
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 0.2rem 0.6rem;
+      border-radius: var(--rounded-full);
+      background: rgba(255, 255, 255, 0.9);
+      color: var(--on-surface);
+      border: 1.5px solid var(--outline-variant);
+      cursor: pointer;
+    }
+    .sf-field-chip.active {
+      background: var(--primary);
+      color: #fff;
+      border-color: #a6146a;
+    }
+    .sf-field-chip.locked {
+      opacity: 0.5;
+      cursor: not-allowed;
+      background: #e9ecef;
+    }
+
+    .sf-field-canvas-area {
+      position: relative;
+      flex: 1;
+      border-radius: var(--rounded);
+      background: rgba(255, 255, 255, 0.35);
+      border: 2px solid rgba(255,255,255,0.6);
+      overflow: hidden;
+      cursor: crosshair;
+    }
+    .sf-wild-slime {
+      position: absolute;
+      width: 60px;
+      height: 60px;
+      cursor: pointer;
+      transition: transform var(--dur-micro) var(--ease-bounce);
+    }
+    .sf-wild-slime:hover {
+      transform: scale(1.1);
+    }
+
+    /* Catch Ring UI overlay */
+    .sf-catch-modal {
+      position: absolute;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.35);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 20;
+    }
+    .sf-ring-box {
+      background: #ffffff;
+      padding: var(--space-md);
+      border-radius: var(--rounded-lg);
+      border: 3px solid var(--primary);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .sf-catch-canvas {
+      width: 140px;
+      height: 140px;
+      margin: var(--space-xs) 0;
+    }
+
+    /* Boss Battle Scene */
+    .sf-battle-view {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, #fff3bf 0%, #ffe066 40%, #ffc078 100%);
+      padding: var(--space-sm);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .sf-battle-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(255, 255, 255, 0.9);
+      padding: 0.4rem 0.8rem;
+      border-radius: var(--rounded);
+      border: 1.5px solid #ffa94d;
+    }
+    .sf-boss-info {
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+    }
+    .sf-boss-svg {
+      width: 68px;
+      height: 68px;
+      filter: drop-shadow(0 4px 6px rgba(0,0,0,0.2));
+    }
+    .sf-boss-bars {
+      flex: 1;
+      margin: 0 var(--space-md);
+    }
+    .sf-boss-hp-track {
+      width: 100%;
+      height: 14px;
+      background: #e9ecef;
+      border-radius: var(--rounded-full);
+      overflow: hidden;
+      border: 1.5px solid #ced4da;
+    }
+    .sf-boss-hp-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #ff6b6b, #fa5252);
+      transition: width var(--dur-micro);
+    }
+
+    .sf-battle-field {
+      display: flex;
+      justify-content: space-around;
+      align-items: flex-end;
+      padding: var(--space-sm) 0;
+    }
+    .sf-party-slot {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      background: rgba(255, 255, 255, 0.85);
+      border: 2px solid var(--outline-variant);
+      border-radius: var(--rounded);
+      padding: 0.3rem 0.5rem;
+      width: 78px;
+    }
+    .sf-party-slot.adv {
+      border-color: #2fbf3a;
+      box-shadow: 0 0 0 2px rgba(47, 191, 58, 0.25);
+    }
+    .sf-party-slot.dis {
+      border-color: #fa5252;
+      opacity: 0.85;
+    }
+
+    .sf-battle-controls {
+      background: rgba(255, 255, 255, 0.95);
+      border: 2px solid #ffa94d;
+      border-radius: var(--rounded);
+      padding: 0.4rem 0.8rem;
+      text-align: center;
+    }
+    .sf-spirit-track {
+      position: relative;
+      height: 18px;
+      background: #dee2e6;
+      border-radius: var(--rounded-full);
+      margin: 4px 0 6px;
+      overflow: hidden;
+      border: 1.5px solid #adb5bd;
+    }
+    .sf-spirit-crit-zone {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      background: #51cf66;
+      border-left: 2px solid #2b8a3e;
+      border-right: 2px solid #2b8a3e;
+    }
+    .sf-spirit-cursor {
+      position: absolute;
+      top: -2px;
+      bottom: -2px;
+      width: 8px;
+      background: #e03131;
+      border: 1.5px solid #fff;
+      border-radius: var(--rounded-full);
+      transform: translateX(-50%);
+      box-shadow: 0 0 4px rgba(0,0,0,0.4);
+    }
+    .sf-cheer-btn {
+      width: 100%;
+      padding: 0.5rem;
+      background: linear-gradient(135deg, #ff922b, #f76707);
+      color: #fff;
+      border-radius: var(--rounded-full);
+      font-size: 0.95rem;
+      font-weight: 900;
+      box-shadow: 0 4px 10px rgba(247, 103, 7, 0.35);
+    }
+    .sf-cheer-btn:active {
+      transform: scale(0.98);
+    }
+
+    /* Expedition Scene */
+    .sf-tanken-view {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at 50% 40%, #e3fafc 0%, #99e9f2 100%);
+      padding: var(--space-sm);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-xs);
+      overflow-y: auto;
+    }
+    .sf-tanken-card {
+      background: rgba(255, 255, 255, 0.95);
+      border: 2px solid #66d9e8;
+      border-radius: var(--rounded);
+      padding: var(--space-sm);
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: var(--space-sm);
+      align-items: center;
+    }
+
+    /* Selected Slime Action Tip Bar */
+    .sf-tip-bar {
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+      padding: 0.45rem var(--space-sm);
+      background: #fffdf5;
+      border-bottom: 1.5px solid #ffe8cc;
+      min-height: 48px;
+      font-size: 0.82rem;
+    }
+    .sf-tip-text {
+      flex: 1;
+      min-width: 0;
+    }
+    .sf-tip-actions {
+      display: flex;
+      gap: 4px;
+      flex-wrap: wrap;
+    }
+
+    /* Stations Area (Synthesis Bench & Nest) */
+    .sf-stations-bar {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-sm);
+      padding: var(--space-sm);
+      background: var(--surface-container-low);
+    }
+    .sf-station-card {
+      background: var(--surface-container);
+      border: 2px dashed var(--outline);
+      border-radius: var(--rounded);
+      padding: 0.45rem 0.6rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .sf-station-card.locked {
+      opacity: 0.65;
+    }
+    .sf-station-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 4px;
+      font-size: 0.78rem;
+      font-weight: 900;
+      color: var(--primary);
+    }
+    .sf-station-slots {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .sf-slot-box {
+      width: 44px;
+      height: 44px;
+      background: #ffffff;
+      border: 1.5px solid var(--outline-variant);
+      border-radius: var(--rounded-sm);
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      position: relative;
+    }
+    .sf-slot-box.has-slime {
+      border-color: var(--primary);
+    }
+    .sf-slot-box svg {
+      width: 36px;
+      height: 36px;
+    }
+
+    /* Right Side: Panel Navigation & Content */
+    .sf-right {
+      display: flex;
+      flex-direction: column;
+      background: var(--surface-container-low);
+    }
+    .sf-panel-tabs {
+      display: flex;
+      gap: 3px;
+      padding: var(--space-xs) var(--space-xs) 0;
+      background: var(--surface-container);
+      border-bottom: 2px solid var(--outline-variant);
+    }
+    .sf-tab-btn {
+      flex: 1;
+      padding: 0.55rem 0.2rem;
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--on-surface-variant);
+      background: transparent;
+      border-radius: var(--rounded-sm) var(--rounded-sm) 0 0;
+      white-space: nowrap;
+      transition: all var(--dur-micro);
+    }
+    .sf-tab-btn:hover {
+      color: var(--primary);
+    }
+    .sf-tab-btn.active {
+      background: var(--surface-container-low);
+      color: var(--primary);
+      font-weight: 900;
+      box-shadow: 0 -2px 6px rgba(0,0,0,0.04);
+      border-top: 2px solid var(--primary);
+    }
+
+    .sf-panel-content {
+      padding: var(--space-sm);
+      overflow-y: auto;
+      flex: 1;
+      min-height: 360px;
+      max-height: 520px;
+    }
+
+    /* Common Shop Items */
+    .sf-shop-list {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-sm);
+    }
+    .sf-item-row {
+      display: grid;
+      grid-template-columns: 42px 1fr auto;
+      gap: var(--space-sm);
+      align-items: center;
+      padding: 0.5rem;
+      background: #ffffff;
+      border: 1.5px solid var(--outline-variant);
+      border-radius: var(--rounded);
+      box-shadow: var(--shadow-soft);
+      transition: transform var(--dur-micro) var(--ease-bounce);
+    }
+    .sf-item-row:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-hover);
+    }
+    .sf-item-icon {
+      width: 42px;
+      height: 42px;
+      display: grid;
+      place-items: center;
+    }
+    .sf-item-info b {
+      display: block;
+      font-size: 0.86rem;
+      color: var(--on-surface);
+    }
+    .sf-item-info small {
+      display: block;
+      font-size: 0.72rem;
+      color: var(--on-surface-variant);
+      line-height: 1.3;
+    }
+
+    /* Slimepedia / 図鑑 Grid */
+    .sf-dex-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+    }
+    .sf-dex-cell {
+      background: #ffffff;
+      border: 1.5px solid var(--outline-variant);
+      border-radius: var(--rounded-sm);
+      padding: 4px;
+      text-align: center;
+      cursor: pointer;
+      position: relative;
+      transition: transform var(--dur-micro) var(--ease-bounce);
+    }
+    .sf-dex-cell:hover {
+      transform: scale(1.05);
+      border-color: var(--primary);
+      z-index: 2;
+    }
+    .sf-dex-cell.unknown {
+      opacity: 0.6;
+      background: #f1f3f5;
+    }
+    .sf-dex-cell svg {
+      width: 42px;
+      height: 42px;
+      margin: 0 auto;
+    }
+    .sf-dex-cell.unknown svg {
+      filter: brightness(0) opacity(0.35);
+    }
+    .sf-dex-cell-name {
+      font-size: 0.68rem;
+      font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-top: 2px;
+    }
+
+    /* Evolution Tree Tab */
+    .sf-tree-container {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-md);
+      font-size: 0.8rem;
+    }
+    .sf-tree-branch {
+      background: #ffffff;
+      border: 1.5px solid var(--outline-variant);
+      border-radius: var(--rounded);
+      padding: var(--space-sm);
+    }
+    .sf-tree-title {
+      font-weight: 900;
+      color: var(--primary);
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .sf-tree-steps {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+    .sf-tree-node {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-width: 58px;
+    }
+    .sf-tree-node svg {
+      width: 36px;
+      height: 36px;
+    }
+    .sf-tree-arrow {
+      color: var(--outline);
+      font-weight: 900;
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      padding: 0.4rem 0.8rem;
+      border-radius: var(--rounded-full);
+      font-size: 0.82rem;
+      font-weight: 900;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all var(--dur-micro) var(--ease-bounce);
+      font-variant-numeric: tabular-nums;
+    }
+    .btn:active {
+      transform: scale(0.96);
+    }
+    .btn-primary {
+      background: var(--primary);
+      color: #fff;
+      box-shadow: 0 3px 8px rgba(194, 32, 127, 0.3);
+    }
+    .btn-primary:hover {
+      background: #a6146a;
+    }
+    .btn-secondary {
+      background: var(--surface-container);
+      color: var(--on-surface);
+      border: 1.5px solid var(--outline);
+    }
+    .btn-secondary:hover {
+      background: var(--surface-container-high);
+    }
+    .btn-accent {
+      background: #e67e22;
+      color: #fff;
+    }
+    .btn-sm {
+      padding: 0.25rem 0.55rem;
+      font-size: 0.74rem;
+    }
+    .btn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+      transform: none !important;
+    }
+
+    /* Modals & Dialogs */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(46, 26, 40, 0.55);
+      backdrop-filter: blur(2px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      padding: var(--space-md);
+    }
+    .modal-overlay[hidden] {
+      display: none !important;
+    }
+    .modal-card {
+      background: #ffffff;
+      border-radius: var(--rounded-lg);
+      border: 3px solid var(--primary);
+      box-shadow: 0 16px 36px rgba(0,0,0,0.3);
+      max-width: 400px;
+      width: 100%;
+      padding: var(--space-md);
+      text-align: center;
+      animation: modal-pop 0.25s var(--ease-bounce);
+    }
+    @keyframes modal-pop {
+      0% { transform: scale(0.85); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .modal-title {
+      font-size: 1.15rem;
+      font-weight: 900;
+      color: var(--primary);
+      margin-bottom: var(--space-xs);
+    }
+    .modal-actions {
+      display: flex;
+      justify-content: center;
+      gap: var(--space-sm);
+      margin-top: var(--space-md);
+    }
+
+    /* Floating feedback texts */
+    .floating-text {
+      position: absolute;
+      font-weight: 900;
+      font-size: 1rem;
+      color: #ffd43b;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.6);
+      pointer-events: none;
+      animation: float-up 0.9s var(--ease-out) forwards;
+      z-index: 50;
+    }
+    @keyframes float-up {
+      0% { transform: translate(-50%, 0) scale(0.8); opacity: 1; }
+      100% { transform: translate(-50%, -45px) scale(1.15); opacity: 0; }
+    }
+
+    /* Instructions & Guide Footer */
+    .instructions-card {
+      margin-top: var(--space-md);
+      background: var(--surface-container-low);
+      border-radius: var(--rounded-lg);
+      border: 2px solid var(--outline-variant);
+      padding: var(--space-md);
+      box-shadow: var(--shadow-soft);
+      font-size: 0.85rem;
+    }
+    .instructions-card h3 {
+      font-size: 1rem;
+      font-weight: 900;
+      color: var(--primary);
+      margin-bottom: var(--space-sm);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .instructions-card ul {
+      padding-left: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      color: var(--on-surface-variant);
+    }
+    .instructions-card strong {
+      color: var(--on-surface);
+    }
+
+    /* Compatibility Table */
+    .table-scroll {
+      overflow-x: auto;
+      margin: var(--space-sm) 0;
+    }
+    .guide-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.8rem;
+    }
+    .guide-table th, .guide-table td {
+      border: 1px solid var(--outline-variant);
+      padding: 0.35rem 0.6rem;
+      text-align: left;
+    }
+    .guide-table th {
+      background: var(--surface-container);
+      color: var(--primary);
+      font-weight: 900;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="app-wrapper">
+  <!-- News Banner -->
+  <div class="sf-news" id="sfNews">
+    <span class="sf-news-badge">牧場ニュース</span>
+    <span class="sf-news-text">スライムを重ねて進化させよう！違う種類をごうせい台に入れると新種発見！？</span>
+    <button class="sf-news-close" id="sfNewsClose" type="button" aria-label="閉じる">✕</button>
+  </div>
+
+  <!-- Game Main Frame -->
+  <div class="game-frame">
+    <!-- Left Column: HUD & Scenes -->
+    <div class="sf-left">
+      <!-- HUD -->
+      <div class="sf-hud">
+        <div class="sf-stat">
+          <small><i data-lucide="coins"></i> コイン</small>
+          <b id="hudCoins">0</b>
+        </div>
+        <div class="sf-stat sf-stat-income">
+          <small><i data-lucide="trending-up"></i> しゅうにゅう</small>
+          <b><span id="hudCps">+0</span><span class="sf-unit">/秒</span></b>
+        </div>
+        <div class="sf-stat sf-stat-net">
+          <small><i data-lucide="crosshair"></i> あみ</small>
+          <b><span id="hudNets">8</span><span class="sf-unit" id="hudMaxNets">/8</span></b>
+        </div>
+        <button class="sf-sound-btn" id="hudSoundBtn" type="button" title="サウンド切替" aria-label="サウンド切替">
+          <i data-lucide="volume-2" id="soundIcon"></i>
+        </button>
+      </div>
+
+      <!-- Scene Navigation Tabs -->
+      <div class="sf-scene-tabs" role="tablist">
+        <button class="sf-scene-btn active" data-scene="ranch" type="button" role="tab" aria-selected="true">
+          <i data-lucide="home"></i> ぼくじょう
+        </button>
+        <button class="sf-scene-btn" data-scene="field" type="button" role="tab" aria-selected="false">
+          <i data-lucide="compass"></i> のはら
+          <span class="sf-badge-count" id="badgeWildCount">3</span>
+        </button>
+        <button class="sf-scene-btn" data-scene="battle" type="button" role="tab" aria-selected="false">
+          <i data-lucide="swords"></i> とうばつ
+          <span class="sf-badge-count" id="badgeBossLevel">B1</span>
+        </button>
+        <button class="sf-scene-btn" data-scene="tanken" type="button" role="tab" aria-selected="false">
+          <i data-lucide="map-pin"></i> たんけん
+        </button>
+      </div>
+
+      <!-- Stage Container (Canvas & Interactive Scenes) -->
+      <div class="sf-stage-container" id="stageContainer">
+        <!-- 1. Ranch Grid Scene -->
+        <div class="sf-ranch-grid" id="ranchGrid">
+          <!-- 16 Cells will be rendered here by JS -->
+        </div>
+
+        <!-- 2. Wild Field Scene (Hidden by default) -->
+        <div class="sf-field-view" id="fieldView" style="display: none;">
+          <div class="sf-field-header">
+            <span style="font-weight: 900; font-size: 0.85rem; color: #2b8a3e;">
+              <i data-lucide="trees" style="vertical-align: -2px;"></i> 野生のスライムを探そう
+            </span>
+            <div class="sf-field-selector" id="fieldSelector">
+              <!-- Field chips populated by JS -->
+            </div>
+          </div>
+          <div class="sf-field-canvas-area" id="fieldCanvasArea">
+            <!-- Wild slimes populate here -->
+          </div>
+        </div>
+
+        <!-- 3. Boss Battle Scene (Hidden by default) -->
+        <div class="sf-battle-view" id="battleView" style="display: none;">
+          <div class="sf-battle-top">
+            <div class="sf-boss-info">
+              <div id="bossSvgWrap"></div>
+              <div>
+                <b id="bossName" style="font-size: 0.95rem; color: #d9480f;">キングウッド</b>
+                <div style="font-size: 0.72rem; color: #862e9c;" id="bossTypeTag">系統: くさ</div>
+              </div>
+            </div>
+            <div class="sf-boss-bars">
+              <div style="display: flex; justify-content: space-between; font-size: 0.74rem; font-weight: 900;">
+                <span>BOSS HP</span>
+                <span id="bossHpText">50 / 50</span>
+              </div>
+              <div class="sf-boss-hp-track">
+                <div class="sf-boss-hp-fill" id="bossHpFill" style="width: 100%;"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="sf-battle-field">
+            <div class="sf-party-slot" id="partySlot0"></div>
+            <div class="sf-party-slot" id="partySlot1"></div>
+            <div class="sf-party-slot" id="partySlot2"></div>
+          </div>
+
+          <div class="sf-battle-controls">
+            <div style="display: flex; justify-content: space-between; font-size: 0.75rem; font-weight: 700;">
+              <span>タイミングよくタップしておうえん！</span>
+              <span id="battleStatusText">戦闘中...</span>
+            </div>
+            <div class="sf-spirit-track" id="spiritTrack">
+              <div class="sf-spirit-crit-zone" id="spiritCritZone" style="left: 42%; width: 16%;"></div>
+              <div class="sf-spirit-cursor" id="spiritCursor" style="left: 0%;"></div>
+            </div>
+            <button class="sf-cheer-btn" id="cheerBtn" type="button">
+              <i data-lucide="zap"></i> おうえん！ (かいしんを狙え)
+            </button>
+          </div>
+        </div>
+
+        <!-- 4. Expedition Scene (Hidden by default) -->
+        <div class="sf-tanken-view" id="tankenView" style="display: none;">
+          <div style="font-weight: 900; color: #0c8599; font-size: 0.88rem;">
+            上位3匹のスライムを送り出して、お宝とレアスライムをゲット！
+          </div>
+          <div id="tankenList" style="display: flex; flex-direction: column; gap: 8px;">
+            <!-- Expedition zones -->
+          </div>
+        </div>
+
+        <!-- Catch Ring Overlay (Modal inside stage) -->
+        <div class="sf-catch-modal" id="catchModal" style="display: none;">
+          <div class="sf-ring-box">
+            <h4 style="font-size: 0.95rem; color: var(--primary); margin-bottom: 4px;">スライム捕獲チャンス！</h4>
+            <small style="color: var(--on-surface-variant);">目印がみどりの範囲に入ったらタップ！</small>
+            <canvas class="sf-catch-canvas" id="catchCanvas" width="140" height="140"></canvas>
+            <button class="btn btn-primary" id="catchTapBtn" type="button" style="width: 100%;">あみを投げる！</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tip & Selection Action Bar -->
+      <div class="sf-tip-bar" id="tipBar">
+        <div class="sf-tip-text" id="tipText">
+          スライムを選んで「なでる」や「エサ」でお世話しよう！
+        </div>
+        <div class="sf-tip-actions" id="tipActions" style="display: none;">
+          <button class="btn btn-secondary btn-sm" id="btnPet" type="button">
+            <i data-lucide="heart" style="color: #e64980;"></i> なでる
+          </button>
+          <button class="btn btn-secondary btn-sm" id="btnFeed" type="button">
+            <i data-lucide="cookie" style="color: #f59f00;"></i> エサ
+          </button>
+          <button class="btn btn-primary btn-sm" id="btnSendGousei" type="button">
+            ごうせい台へ
+          </button>
+          <button class="btn btn-secondary btn-sm" id="btnSendNest" type="button">
+            すみかへ
+          </button>
+        </div>
+      </div>
+
+      <!-- Stations Bar (ごうせい台 & すみか) -->
+      <div class="sf-stations-bar">
+        <!-- ごうせい台 -->
+        <div class="sf-station-card" id="stationGousei">
+          <div class="sf-station-header">
+            <span><i data-lucide="flask-conical" style="vertical-align: -2px;"></i> ごうせい台</span>
+            <small id="gouseiHint">2匹セット</small>
+          </div>
+          <div class="sf-station-slots">
+            <div class="sf-slot-box" id="gouseiSlotA" title="スライムA"></div>
+            <span style="font-weight: 900; color: var(--outline);">+</span>
+            <div class="sf-slot-box" id="gouseiSlotB" title="スライムB"></div>
+            <button class="btn btn-primary btn-sm" id="btnDoGousei" type="button" disabled style="margin-left: auto;">
+              ごうせい！
+            </button>
+          </div>
+        </div>
+
+        <!-- すみか -->
+        <div class="sf-station-card" id="stationNest">
+          <div class="sf-station-header">
+            <span><i data-lucide="egg" style="vertical-align: -2px;"></i> すみか (産卵)</span>
+            <small id="nestTimerText">同種2匹</small>
+          </div>
+          <div class="sf-station-slots">
+            <div class="sf-slot-box" id="nestSlotA" title="親A"></div>
+            <span style="font-weight: 900; color: var(--outline);">♥</span>
+            <div class="sf-slot-box" id="nestSlotB" title="親B"></div>
+            <button class="btn btn-accent btn-sm" id="btnHatchNest" type="button" disabled style="margin-left: auto;">
+              待機中
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Column: Tabs Panel -->
+    <div class="sf-right">
+      <div class="sf-panel-tabs" role="tablist">
+        <button class="sf-tab-btn active" data-tab="egg" type="button" role="tab">タマゴ</button>
+        <button class="sf-tab-btn" data-tab="fac" type="button" role="tab">しせつ</button>
+        <button class="sf-tab-btn" data-tab="dex" type="button" role="tab">ずかん</button>
+        <button class="sf-tab-btn" data-tab="tree" type="button" role="tab">けいとうず</button>
+        <button class="sf-tab-btn" data-tab="rebirth" type="button" role="tab">にじ</button>
+      </div>
+
+      <div class="sf-panel-content" id="panelContent">
+        <!-- Tab Content dynamically generated -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Game Instructions & Guide -->
+  <div class="instructions-card">
+    <h3><i data-lucide="book-open"></i> スライム牧場の遊び方ガイド</h3>
+    <ul>
+      <li><strong>ふやす</strong>: 「タマゴ」タブでタマゴを購入・「のはら」で野生のスライムを捕獲・「すみか」で産卵させてスライムを増やせます。</li>
+      <li><strong>進化</strong>: 牧場で<strong>同じ種類のスライムをドラッグして重ねる</strong>と、1段階上の強力なスライムに進化します。</li>
+      <li><strong>枝分かれ進化</strong>: 3段階目のスライム（つぼみなど）を進化させると、好みのエサや選択肢で異なる進化先へ分岐します。</li>
+      <li><strong>ごうせい台</strong>: 異なる系統のスライム2匹をセットして「ごうせい！」すると、新種のスライム（あじさい・やきいもなど）が誕生します！失敗してもスライムは無事に戻ります。</li>
+      <li><strong>お世話とごきげん</strong>: 時間が経つとスライムは（ごきげん → ふつう → しょんぼり → やさぐれ）と弱り、コイン収入とつよさが低下します。「なでる」や「エサ」で元気にしてあげましょう！</li>
+      <li><strong>3すくみバトル</strong>: 相性は<strong>「ほのお ＞ くさ ＞ みず ＞ ほのお」</strong>。有利な属性は<strong>1.5倍の強さ</strong>になり、不利だと0.67倍になります。</li>
+    </ul>
+
+    <div class="table-scroll">
+      <table class="guide-table">
+        <thead>
+          <tr>
+            <th>系統</th>
+            <th>1段階目</th>
+            <th>2段階目</th>
+            <th>3段階目</th>
+            <th>4段階目 (分岐)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th style="color: #2b8a3e;">くさ</th>
+            <td>みどりスライム</td>
+            <td>はっぱスライム</td>
+            <td>つぼみスライム</td>
+            <td>はなスライム / きのこスライム</td>
+          </tr>
+          <tr>
+            <th style="color: #1971c2;">みず</th>
+            <td>あおスライム</td>
+            <td>あわスライム</td>
+            <td>なみスライム</td>
+            <td>うみスライム / こおりスライム</td>
+          </tr>
+          <tr>
+            <th style="color: #e64a19;">ほのお</th>
+            <td>あかスライム</td>
+            <td>ほのおスライム</td>
+            <td>マグマスライム</td>
+            <td>たいようスライム / かみなりスライム</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Dialogs -->
+<div class="modal-overlay" id="commonModal" hidden>
+  <div class="modal-card" id="commonModalCard">
+    <h3 class="modal-title" id="modalTitle">ダイアログ</h3>
+    <div id="modalBody" style="margin: var(--space-sm) 0; font-size: 0.88rem; line-height: 1.6;"></div>
+    <div class="modal-actions" id="modalActions">
+      <button class="btn btn-primary" id="modalOkBtn" type="button">OK</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="branchModal" hidden>
+  <div class="modal-card" id="branchModalCard">
+    <h3 class="modal-title" id="branchModalTitle">どちらに進化する？</h3>
+    <div id="branchModalBody" style="margin: var(--space-sm) 0; font-size: 0.88rem; line-height: 1.6;">
+      <p style="margin-bottom: 12px; color: var(--on-surface-variant);">進化先を1つ選んでください：</p>
+      <div style="display: flex; gap: 12px; justify-content: center;">
+        <button class="btn btn-secondary" id="branchOpt0" type="button" style="flex: 1; padding: 10px; display: flex; flex-direction: column; align-items: center;"></button>
+        <button class="btn btn-secondary" id="branchOpt1" type="button" style="flex: 1; padding: 10px; display: flex; flex-direction: column; align-items: center;"></button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<api-shim></api-shim>
+<script>
+(function() {
+  'use strict';
+
+  // --- AUDIO SYNTHESIZER (Native Web Audio API, Zero Dependencies) ---
+  var audioCtx = null;
+  var isMuted = false;
+
+  function initAudio() {
+    if (!audioCtx) {
+      var AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      if (AudioContextClass) audioCtx = new AudioContextClass();
+    }
+    if (audioCtx && audioCtx.state === 'suspended') {
+      audioCtx.resume();
+    }
+  }
+
+  function playTone(freq, type, duration, gainVal) {
+    if (isMuted) return;
+    try {
+      initAudio();
+      if (!audioCtx) return;
+      var osc = audioCtx.createOscillator();
+      var gain = audioCtx.createGain();
+      osc.type = type || 'sine';
+      osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+      gain.gain.setValueAtTime(gainVal || 0.15, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + duration);
+    } catch(e) {}
+  }
+
+  function sfxPop() {
+    if (isMuted) return;
+    playTone(480, 'sine', 0.08, 0.2);
+  }
+
+  function sfxCoin() {
+    if (isMuted) return;
+    try {
+      initAudio();
+      if (!audioCtx) return;
+      var now = audioCtx.currentTime;
+      var osc = audioCtx.createOscillator();
+      var gain = audioCtx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(987.77, now); // B5
+      osc.frequency.setValueAtTime(1318.51, now + 0.08); // E6
+      gain.gain.setValueAtTime(0.18, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(now + 0.28);
+    } catch(e) {}
+  }
+
+  function sfxMerge() {
+    if (isMuted) return;
+    try {
+      initAudio();
+      if (!audioCtx) return;
+      var now = audioCtx.currentTime;
+      var freqs = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+      freqs.forEach(function(f, i) {
+        var osc = audioCtx.createOscillator();
+        var gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(f, now + i * 0.06);
+        gain.gain.setValueAtTime(0.15, now + i * 0.06);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.06 + 0.15);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(now + i * 0.06);
+        osc.stop(now + i * 0.06 + 0.15);
+      });
+    } catch(e) {}
+  }
+
+  function sfxCrit() {
+    if (isMuted) return;
+    try {
+      initAudio();
+      if (!audioCtx) return;
+      var now = audioCtx.currentTime;
+      var osc = audioCtx.createOscillator();
+      var gain = audioCtx.createGain();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(300, now);
+      osc.frequency.exponentialRampToValueAtTime(800, now + 0.15);
+      gain.gain.setValueAtTime(0.2, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(now + 0.25);
+    } catch(e) {}
+  }
+
+  function sfxFanfare() {
+    if (isMuted) return;
+    try {
+      initAudio();
+      if (!audioCtx) return;
+      var now = audioCtx.currentTime;
+      var chord = [523.25, 659.25, 783.99, 1046.50];
+      chord.forEach(function(f) {
+        var osc = audioCtx.createOscillator();
+        var gain = audioCtx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(f, now);
+        gain.gain.setValueAtTime(0.12, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(now + 0.6);
+      });
+    } catch(e) {}
+  }
+
+  // --- SPECIES DATABASE (22 Species) ---
+  var SPECIES = {
+    // くさ系統 (Grass)
+    green: { line: 'grass', stage: 1, income: 1, power: 10, evolve: 'leaf', name: 'みどりスライム', color: '#51cf66', desc: '牧場の基本となる緑色のスライム。みずみずしく元気いっぱい。' },
+    leaf: { line: 'grass', stage: 2, income: 3, power: 25, evolve: 'bud', name: 'はっぱスライム', color: '#40c057', desc: '頭からかわいい双葉が生えたスライム。光合成で成長が早い。' },
+    bud: { line: 'grass', stage: 3, income: 9, power: 65, evolve: ['flower', 'mushroom'], name: 'つぼみスライム', color: '#37b24d', desc: '頭につぼみを宿したスライム。与えたエサで進化先が分かれる。' },
+    flower: { line: 'grass', stage: 4, income: 28, power: 160, name: 'はなスライム', color: '#2f9e44', desc: 'きれいな大輪の花を咲かせたスライム。甘い蜜の香りが漂う。', food: 'nectar' },
+    mushroom: { line: 'grass', stage: 4, income: 30, power: 155, name: 'きのこスライム', color: '#688e26', desc: 'キノコの傘をかぶったスライム。森の湿り気が大好き。', food: 'spore' },
+
+    // みず系統 (Water)
+    blue: { line: 'water', stage: 1, income: 2, power: 12, evolve: 'bubble', name: 'あおスライム', color: '#339af0', desc: '澄んだ青いスライム。体が透き通っていてひんやり冷たい。' },
+    bubble: { line: 'water', stage: 2, income: 6, power: 30, evolve: 'wave', name: 'あわスライム', color: '#228be6', desc: '周りにふわふわと泡を浮かべたスライム。跳ねるとパチンと音が鳴る。' },
+    wave: { line: 'water', stage: 3, income: 15, power: 75, evolve: ['sea', 'ice'], name: 'なみスライム', color: '#1c7ed6', desc: '頭が白波のようにうねるスライム。潮の満ち引きで力が増す。' },
+    sea: { line: 'water', stage: 4, income: 42, power: 195, name: 'うみスライム', color: '#1971c2', desc: '深い海のサンゴと貝殻をまとったスライム。雄大な海の覇者。', food: 'spring_water' },
+    ice: { line: 'water', stage: 4, income: 45, power: 205, name: 'こおりスライム', color: '#15aabf', desc: '凍てつく氷晶を身にまとったスライム。周囲を瞬時に凍らせる。', food: 'ice_berry' },
+
+    // ほのお系統 (Fire)
+    red: { line: 'fire', stage: 1, income: 3, power: 15, evolve: 'flame', name: 'あかスライム', color: '#ff6b6b', desc: '燃えるような赤色のスライム。触るとほんのりあたたかい。' },
+    flame: { line: 'fire', stage: 2, income: 8, power: 40, evolve: 'magma', name: 'ほのおスライム', color: '#fa5252', desc: '頭に小さな火の粉が踊るスライム。情熱的で活発に動き回る。' },
+    magma: { line: 'fire', stage: 3, income: 22, power: 100, evolve: ['sun', 'thunder'], name: 'マグマスライム', color: '#e03131', desc: 'ドロドロの溶岩が流れるスライム。近づくだけで熱気がすごい。' },
+    sun: { line: 'fire', stage: 4, income: 65, power: 255, name: 'たいようスライム', color: '#f76707', desc: '太陽のコロナを放つ眩しいスライム。圧倒的な熱量を持つ。', food: 'light_grain' },
+    thunder: { line: 'fire', stage: 4, income: 72, power: 265, name: 'かみなりスライム', color: '#f59f00', desc: '稲妻をまとった電撃スライム。目にもとまらぬ速さで駆け回る。', food: 'spark_fruit' },
+
+    // ごうせい種 (Hybrids)
+    ajisai: { line: 'grass', stage: 3, income: 36, power: 135, recipe: ['leaf', 'bubble'], name: 'あじさいスライム', color: '#845ef7', desc: 'はっぱとあわの合成で生まれたスライム。雨上がりに花の色が変わる。' },
+    yakiimo: { line: 'fire', stage: 3, income: 40, power: 145, recipe: ['flame', 'leaf'], name: 'やきいもスライム', color: '#ae3ec9', desc: 'ほのおとはっぱの合成種。ホクホクとして甘くて香ばしい匂いがする。' },
+    obsidian: { line: 'water', stage: 4, income: 90, power: 330, recipe: ['magma', 'wave'], name: 'こくようせきスライム', color: '#343a40', desc: 'マグマとなみが衝突して固まった黒曜石のスライム。極めて硬い。' },
+    himawari: { line: 'grass', stage: 4, income: 100, power: 350, recipe: ['flower', 'sun'], name: 'ひまわりスライム', color: '#fcc419', desc: '花と太陽の奇跡の結合。いつも光に向かってにこにこ笑っている。' },
+    aurora: { line: 'water', stage: 5, income: 175, power: 520, recipe: ['ice', 'sun'], name: 'オーロラスライム', color: '#20c997', desc: '氷と太陽の光が織りなす極光スライム。夜空を神秘的に照らす。' },
+
+    // 究極種 (Ultimate)
+    rainbow: { line: 'all', stage: 5, income: 350, power: 1100, recipe: ['aurora', 'himawari'], name: 'にじスライム', color: '#da77f2', desc: '七色の光を放つ伝説のスライム。見ているだけで心が洗われる。' },
+    king: { line: 'neutral', stage: 5, income: 550, power: 1600, name: 'おやぶんスライム', color: '#ffd43b', desc: '突然変異か探検でのみ姿を現す巨大な王様スライム。圧倒的な貫禄！' }
+  };
+
+  // Recipe table reverse lookup: key 'a+b' -> result
+  function recipeKey(a, b) { return a < b ? a + '+' + b : b + '+' + a; }
+  var RECIPES = {};
+  Object.keys(SPECIES).forEach(function(k) {
+    var r = SPECIES[k].recipe;
+    if (r && r.length === 2) {
+      RECIPES[recipeKey(r[0], r[1])] = k;
+    }
+  });
+
+  // Boss List
+  var BOSSES = [
+    { name: 'キングウッド', line: 'grass', hp: 50, reward: 200, unlockField: 1, desc: '巨大な木の長老スライム' },
+    { name: 'おおかめボス', line: 'water', hp: 140, reward: 600, unlockField: 2, desc: '甲羅を背負った海のヌシ' },
+    { name: 'ボルケーノゴーレム', line: 'fire', hp: 320, reward: 1800, unlockField: 3, desc: '火口で生まれた岩石スライム' },
+    { name: 'じゅかいの守護者', line: 'grass', hp: 700, reward: 4500, unlockTanken: true, desc: '原生林を守る古代の守護竜' },
+    { name: 'シンカイロード', line: 'water', hp: 1400, reward: 9500, desc: '深海の水圧を支配する帝王' },
+    { name: 'エンペラーサラマンダー', line: 'fire', hp: 2800, reward: 22000, desc: 'すべてを灰にする紅蓮の皇帝' },
+    { name: 'むげんの巨神スライム', line: 'neutral', hp: 6000, reward: 50000, desc: '限界を超えて挑み続ける究極の壁' }
+  ];
+
+  // Fields for catching
+  var FIELDS = [
+    { id: 0, name: 'ひだまり草地', minBoss: 0, species: ['green', 'leaf'], bg: '#e2f7d8' },
+    { id: 1, name: 'せせらぎの泉', minBoss: 1, species: ['blue', 'bubble'], bg: '#d0ebff' },
+    { id: 2, name: 'ぐれんの谷', minBoss: 2, species: ['red', 'flame'], bg: '#ffe3e3' },
+    { id: 3, name: 'げっこうの森', minBoss: 4, species: ['bud', 'wave', 'magma', 'ajisai'], bg: '#e5dbff' }
+  ];
+
+  // Expeditions
+  var EXPEDITIONS = [
+    { id: 'forest', name: 'くらい森', durationSec: 30, reqBoss: 3, coinMin: 150, coinMax: 350, rareDrop: 'leaf' },
+    { id: 'ruins', name: 'ふるい遺跡', durationSec: 90, reqBoss: 4, coinMin: 800, coinMax: 1800, rareDrop: 'ajisai' },
+    { id: 'cave', name: 'たからの洞窟', durationSec: 180, reqBoss: 5, coinMin: 3000, coinMax: 7000, rareDrop: 'king' }
+  ];
+
+  // Facilities
+  var FACILITIES = [
+    { id: 'flowerbed', name: '花だん', cost: 100, desc: '2分ごとに「はなのみつ」を生産。', food: 'nectar' },
+    { id: 'well', name: '井戸', cost: 300, desc: '2分ごとに「わきみず」を生産。', food: 'spring_water' },
+    { id: 'bonfire', name: 'かがり火', cost: 600, desc: '2分ごとに「ひかりの粒」を生産。', food: 'light_grain' },
+    { id: 'nethut', name: 'あみ小屋', cost: 1200, desc: 'あみの所持上限を+4、回復速度を2倍にする。' },
+    { id: 'spring', name: 'きらきらの泉', cost: 3000, desc: '突然変異(きらきら)の発生確率を+4%上昇。' },
+    { id: 'automerge', name: 'おまかせ進化', cost: 8000, desc: '同じ種類を自動で重ねて進化させる便利機能。' }
+  ];
+
+  // Care Mood Steps
+  var CARE_STEPS = [0, 3 * 3600000, 10 * 3600000, 48 * 3600000];
+  var CARE_NAMES = ['ごきげん', 'ふつう', 'しょんぼり', 'やさぐれ'];
+  var CARE_MULTS = [1.0, 0.8, 0.5, 0.25];
+  var CARE_MARKS = ['😊', '💤', '💧', '💢'];
+
+  // 3-way Elemental Affinity: fire > grass > water > fire
+  var BEATS = { fire: 'grass', grass: 'water', water: 'fire' };
+  function getTypeMult(attackerLine, defenderLine) {
+    if (attackerLine === 'all') return 1.5;
+    if (defenderLine === 'all' || attackerLine === 'neutral' || defenderLine === 'neutral') return 1.0;
+    if (BEATS[attackerLine] === defenderLine) return 1.5;
+    if (BEATS[defenderLine] === attackerLine) return 0.67;
+    return 1.0;
+  }
+
+  // --- GAME STATE ---
+  var S = {
+    coins: 30,
+    lifetimeCoins: 30,
+    nets: 8,
+    netAt: Date.now(),
+    eggLevel: 1,
+    eggBought: { grass: 0, water: 0, fire: 0 },
+    cells: new Array(16).fill(null), // Array of objects: { k: string, shiny: bool, careAt: number, food: string|null }
+    dex: {}, // discovered species: { [key]: { normal: bool, shiny: bool } }
+    recipesFound: {},
+    bossCleared: 0,
+    shards: 0,
+    fac: {},
+    autoMergeOn: true,
+    foods: { nectar: 2, spore: 1, spring_water: 1, ice_berry: 0, light_grain: 0, spark_fruit: 0 },
+    gousei: [null, null],
+    nest: { a: null, b: null, eggAt: 0, ready: false },
+    tanken: null, // { id, startAt, durationSec }
+    lastTick: Date.now()
+  };
+
+  // Pre-fill initial cell
+  S.cells[0] = { k: 'green', shiny: false, careAt: Date.now(), food: null };
+  S.dex['green'] = { normal: true, shiny: false };
+
+  // Runtime UI state
+  var selectedCellIndex = -1;
+  var currentScene = 'ranch';
+  var currentTab = 'egg';
+  var currentFieldId = 0;
+  var wildSlimes = [];
+  var catchingState = null; // { slime, lapMs, zoneStart, zoneSize, t0 }
+  var battleState = null; // { bossIndex, bossHp, maxHp, t0, durationMs, lastSweep, bonus, chargeBroken }
+
+  // --- SVG SLIME GENERATOR ---
+  function renderSlimeSvg(key, shiny, size) {
+    size = size || 54;
+    var sp = SPECIES[key] || SPECIES['green'];
+    var baseColor = sp.color;
+    var line = sp.line;
+
+    var accessorySvg = '';
+    // Decorative parts based on species
+    if (key === 'green') {
+      accessorySvg = `<ellipse cx="32" cy="10" rx="3" ry="5" fill="#69db7c" transform="rotate(-15 32 10)"/>`;
+    } else if (key === 'leaf') {
+      accessorySvg = `<path d="M 32,10 C 26,2 38,2 32,10 Z" fill="#2b8a3e"/>
+                      <path d="M 32,10 C 24,6 26,1 32,10 Z" fill="#51cf66"/>`;
+    } else if (key === 'bud') {
+      accessorySvg = `<ellipse cx="32" cy="8" rx="5" ry="6" fill="#f06595"/>
+                      <polygon points="32,2 29,8 35,8" fill="#d6336c"/>`;
+    } else if (key === 'flower') {
+      accessorySvg = `<circle cx="26" cy="7" r="4" fill="#ff8787"/>
+                      <circle cx="38" cy="7" r="4" fill="#ff8787"/>
+                      <circle cx="32" cy="4" r="4" fill="#ff6b6b"/>
+                      <circle cx="32" cy="9" r="3" fill="#ffd43b"/>`;
+    } else if (key === 'mushroom') {
+      accessorySvg = `<path d="M 20,12 C 20,4 44,4 44,12 Z" fill="#e03131"/>
+                      <circle cx="26" cy="8" r="1.5" fill="#fff"/>
+                      <circle cx="38" cy="8" r="1.5" fill="#fff"/>
+                      <circle cx="32" cy="6" r="1.8" fill="#fff"/>`;
+    } else if (key === 'blue') {
+      accessorySvg = `<ellipse cx="32" cy="8" rx="2.5" ry="4" fill="#74c0fc"/>`;
+    } else if (key === 'bubble') {
+      accessorySvg = `<circle cx="16" cy="20" r="3.5" fill="rgba(255,255,255,0.7)"/>
+                      <circle cx="48" cy="24" r="4" fill="rgba(255,255,255,0.7)"/>
+                      <circle cx="32" cy="6" r="3" fill="rgba(255,255,255,0.8)"/>`;
+    } else if (key === 'wave') {
+      accessorySvg = `<path d="M 22,12 Q 32,2 42,12 Q 32,7 22,12 Z" fill="#ffffff"/>`;
+    } else if (key === 'sea') {
+      accessorySvg = `<path d="M 22,10 L 25,4 L 28,10 L 32,2 L 36,10" stroke="#f06595" stroke-width="2.5" fill="none"/>
+                      <circle cx="32" cy="12" r="3" fill="#ffe066"/>`;
+    } else if (key === 'ice') {
+      accessorySvg = `<polygon points="32,2 29,10 35,10" fill="#a5d8ff"/>
+                      <polygon points="24,6 23,12 28,12" fill="#d0ebff"/>
+                      <polygon points="40,6 36,12 41,12" fill="#d0ebff"/>`;
+    } else if (key === 'red') {
+      accessorySvg = `<path d="M 32,12 Q 34,4 32,0 Q 28,6 32,12 Z" fill="#ffd43b"/>`;
+    } else if (key === 'flame') {
+      accessorySvg = `<path d="M 26,12 Q 24,4 28,2 Q 30,7 26,12 Z" fill="#ff922b"/>
+                      <path d="M 38,12 Q 40,4 36,2 Q 34,7 38,12 Z" fill="#ff922b"/>
+                      <path d="M 32,10 Q 33,0 31,-2 Q 29,4 32,10 Z" fill="#ffd43b"/>`;
+    } else if (key === 'magma') {
+      accessorySvg = `<path d="M 18,36 Q 26,38 32,32 Q 40,36 46,30" stroke="#ffd43b" stroke-width="2" fill="none"/>
+                      <circle cx="32" cy="8" r="3" fill="#f76707"/>`;
+    } else if (key === 'sun') {
+      accessorySvg = `<circle cx="32" cy="32" r="26" fill="none" stroke="#ffd43b" stroke-width="3" stroke-dasharray="4,6"/>
+                      <circle cx="32" cy="6" r="3" fill="#ffd43b"/>`;
+    } else if (key === 'thunder') {
+      accessorySvg = `<polygon points="34,-2 26,10 33,10 28,20 40,8 33,8" fill="#ffd43b" stroke="#f59f00" stroke-width="1"/>`;
+    } else if (key === 'ajisai') {
+      accessorySvg = `<circle cx="28" cy="6" r="3.5" fill="#cc5de8"/>
+                      <circle cx="36" cy="6" r="3.5" fill="#845ef7"/>
+                      <circle cx="32" cy="11" r="3.5" fill="#5c7cfa"/>`;
+    } else if (key === 'yakiimo') {
+      accessorySvg = `<ellipse cx="32" cy="40" rx="14" ry="10" fill="#ffd43b"/>`;
+    } else if (key === 'obsidian') {
+      accessorySvg = `<polygon points="32,4 22,12 32,20 42,12" fill="#868e96" opacity="0.7"/>`;
+    } else if (key === 'himawari') {
+      accessorySvg = `<circle cx="32" cy="34" r="24" fill="none" stroke="#fcc419" stroke-width="6" stroke-dasharray="6,4"/>`;
+    } else if (key === 'aurora') {
+      accessorySvg = `<path d="M 14,12 Q 32,0 50,12 Q 32,6 14,12 Z" fill="#20c997"/>`;
+    } else if (key === 'rainbow') {
+      accessorySvg = `<path d="M 12,30 A 20,20 0 0 1 52,30" stroke="url(#rbGrad)" stroke-width="4" fill="none"/>`;
+    } else if (key === 'king') {
+      accessorySvg = `<polygon points="20,10 24,0 28,8 32,-2 36,8 40,0 44,10" fill="#ffd43b" stroke="#f59f00" stroke-width="1.5"/>
+                      <circle cx="32" cy="0" r="2" fill="#e03131"/>`;
+    }
+
+    var shinySvg = '';
+    if (shiny) {
+      shinySvg = `
+        <polygon points="12,12 14,8 16,12 20,14 16,16 14,20 12,16 8,14" fill="#ffd700"/>
+        <polygon points="50,14 51,10 53,14 57,15 53,17 51,21 50,17 46,15" fill="#ffd700"/>
+      `;
+    }
+
+    return `
+      <svg viewBox="0 0 64 64" width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <radialGradient id="grad_${key}" cx="35%" cy="35%" r="65%">
+            <stop offset="0%" stop-color="#ffffff" stop-opacity="0.45"/>
+            <stop offset="60%" stop-color="${baseColor}"/>
+            <stop offset="100%" stop-color="${baseColor}" stop-opacity="0.85"/>
+          </radialGradient>
+          <linearGradient id="rbGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#ff6b6b"/>
+            <stop offset="33%" stop-color="#fcc419"/>
+            <stop offset="66%" stop-color="#20c997"/>
+            <stop offset="100%" stop-color="#845ef7"/>
+          </linearGradient>
+        </defs>
+        ${accessorySvg}
+        <!-- Slime jelly droplet body -->
+        <path d="M 32,10 C 48,10 58,22 58,38 C 58,53 48,58 32,58 C 16,58 6,53 6,38 C 6,22 16,10 32,10 Z"
+              fill="${key === 'rainbow' ? 'url(#rbGrad)' : `url(#grad_${key})`}"
+              stroke="rgba(0,0,0,0.12)" stroke-width="1.5"/>
+        <!-- Specular Highlight -->
+        <ellipse cx="22" cy="22" rx="6" ry="3" fill="rgba(255,255,255,0.65)" transform="rotate(-30 22 22)"/>
+        <!-- Cute Eyes -->
+        <circle cx="24" cy="35" r="3.5" fill="#2e1a28"/>
+        <circle cx="25" cy="34" r="1.2" fill="#ffffff"/>
+        <circle cx="40" cy="35" r="3.5" fill="#2e1a28"/>
+        <circle cx="41" cy="34" r="1.2" fill="#ffffff"/>
+        <!-- Rosy Cheeks -->
+        <ellipse cx="18" cy="40" rx="3" ry="1.8" fill="rgba(255,107,107,0.35)"/>
+        <ellipse cx="46" cy="40" rx="3" ry="1.8" fill="rgba(255,107,107,0.35)"/>
+        <!-- Smile -->
+        <path d="M 30,41 Q 32,43 34,41" stroke="#2e1a28" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+        ${shinySvg}
+      </svg>
+    `;
+  }
+
+  // --- BIG NUMBERS FORMATTER ---
+  function fmtBig(n) {
+    n = Math.floor(n || 0);
+    if (n < 1e4) return n.toLocaleString();
+    var units = [[1e16, '京'], [1e12, '兆'], [1e8, '億'], [1e4, '万']];
+    for (var i = 0; i < units.length; i++) {
+      if (n >= units[i][0]) return (n / units[i][0]).toFixed(2) + units[i][1];
+    }
+    return String(n);
+  }
+
+  // --- MOOD & CPS CALCULATION ---
+  function getMoodLevel(careAt, t) {
+    var diff = t - (careAt || 0);
+    for (var i = CARE_STEPS.length - 1; i > 0; i--) {
+      if (diff >= CARE_STEPS[i]) return i;
+    }
+    return 0;
+  }
+
+  function getFacilityMult() {
+    var m = 1.0;
+    if (S.fac.flowerbed) m *= 1.1;
+    if (S.fac.well) m *= 1.1;
+    if (S.fac.bonfire) m *= 1.1;
+    return m;
+  }
+
+  function calcTotalCps(t) {
+    var base = 0;
+    var nowTime = t || Date.now();
+    for (var i = 0; i < S.cells.length; i++) {
+      var item = S.cells[i];
+      if (item && SPECIES[item.k]) {
+        var sp = SPECIES[item.k];
+        var moodMult = t ? CARE_MULTS[getMoodLevel(item.careAt, nowTime)] : 1.0;
+        var inc = sp.income * (item.shiny ? 3 : 1) * moodMult;
+        base += inc;
+      }
+    }
+    return base * getFacilityMult() * (1 + 0.1 * (S.shards || 0));
+  }
+
+  // --- EGG PRICES ---
+  function getEggPrice(line) {
+    var bought = S.eggBought[line] || 0;
+    var base = line === 'grass' ? 20 : (line === 'water' ? 120 : 400);
+    return Math.ceil(base * Math.pow(1.15, bought));
+  }
+
+  // --- RANCH ACTIONS (Add, Merge, Evolve, Care) ---
+  function findEmptyCellIndex() {
+    for (var i = 0; i < S.cells.length; i++) {
+      if (!S.cells[i]) return i;
+    }
+    return -1;
+  }
+
+  function addSlime(key, isShiny) {
+    var idx = findEmptyCellIndex();
+    if (idx === -1) {
+      showTip('牧場がいっぱいです！合体するかスペースを空けてね');
+      return false;
+    }
+    if (isShiny === undefined) {
+      var shinyBonus = (S.fac.spring ? 0.04 : 0);
+      isShiny = Math.random() < (0.02 + shinyBonus);
+    }
+    S.cells[idx] = {
+      k: key,
+      shiny: isShiny,
+      careAt: Date.now(),
+      food: null
+    };
+    recordDex(key, isShiny);
+    renderRanchGrid();
+    renderDex();
+    return true;
+  }
+
+  function recordDex(k, shiny) {
+    if (!S.dex[k]) S.dex[k] = { normal: false, shiny: false };
+    if (shiny) S.dex[k].shiny = true;
+    else S.dex[k].normal = true;
+  }
+
+  function mergeCells(fromIdx, toIdx) {
+    if (fromIdx === toIdx) return false;
+    var a = S.cells[fromIdx];
+    var b = S.cells[toIdx];
+    if (!a || !b) return false;
+
+    // Both must be same species to evolve
+    if (a.k !== b.k) {
+      // If different species, swap them!
+      S.cells[fromIdx] = b;
+      S.cells[toIdx] = a;
+      sfxPop();
+      renderRanchGrid();
+      return true;
+    }
+
+    var sp = SPECIES[a.k];
+    if (!sp || !sp.evolve) {
+      showTip(sp.name + 'はこれ以上進化できません');
+      return false;
+    }
+
+    var nextEvolve = sp.evolve;
+    var newShiny = a.shiny || b.shiny || (Math.random() < (0.02 + (S.fac.spring ? 0.04 : 0)));
+
+    // Rare chance of boss king mutation (0.5%)
+    if (Math.random() < 0.005) {
+      nextEvolve = 'king';
+    }
+
+    // Branching Evolution logic
+    if (Array.isArray(nextEvolve)) {
+      // Check if food already set
+      var foodChoice = a.food || b.food;
+      var chosenTarget = null;
+      if (foodChoice) {
+        nextEvolve.forEach(function(cand) {
+          if (SPECIES[cand].food === foodChoice) chosenTarget = cand;
+        });
+      }
+      if (chosenTarget) {
+        completeMerge(fromIdx, toIdx, chosenTarget, newShiny);
+      } else {
+        // Show Branch Choice Modal
+        showBranchModal(fromIdx, toIdx, nextEvolve, newShiny);
+      }
+      return true;
+    }
+
+    completeMerge(fromIdx, toIdx, nextEvolve, newShiny);
+    return true;
+  }
+
+  function completeMerge(fromIdx, toIdx, newKey, newShiny) {
+    S.cells[toIdx] = {
+      k: newKey,
+      shiny: newShiny,
+      careAt: Date.now(),
+      food: null
+    };
+    S.cells[fromIdx] = null;
+    selectedCellIndex = toIdx;
+
+    recordDex(newKey, newShiny);
+    sfxMerge();
+    createFloatText(toIdx, '進化！ ' + SPECIES[newKey].name);
+    showTip('✨ ' + SPECIES[newKey].name + ' に進化しました！');
+
+    renderRanchGrid();
+    renderDex();
+    renderEvolutionTree();
+    updateTipBar();
+  }
+
+  function showBranchModal(fromIdx, toIdx, options, newShiny) {
+    var modal = document.getElementById('branchModal');
+    var opt0 = document.getElementById('branchOpt0');
+    var opt1 = document.getElementById('branchOpt1');
+    if (!modal || !opt0 || !opt1) return;
+
+    opt0.innerHTML = `
+      ${renderSlimeSvg(options[0], false, 50)}
+      <b style="margin-top: 6px;">${SPECIES[options[0]].name}</b>
+      <small style="color: var(--on-surface-variant); font-size: 0.72rem;">秒収 +${SPECIES[options[0]].income}</small>
+    `;
+    opt1.innerHTML = `
+      ${renderSlimeSvg(options[1], false, 50)}
+      <b style="margin-top: 6px;">${SPECIES[options[1]].name}</b>
+      <small style="color: var(--on-surface-variant); font-size: 0.72rem;">秒収 +${SPECIES[options[1]].income}</small>
+    `;
+
+    opt0.onclick = function() {
+      modal.hidden = true;
+      completeMerge(fromIdx, toIdx, options[0], newShiny);
+    };
+    opt1.onclick = function() {
+      modal.hidden = true;
+      completeMerge(fromIdx, toIdx, options[1], newShiny);
+    };
+
+    modal.hidden = false;
+  }
+
+  function autoMergeAll() {
+    var merged = 0;
+    for (var i = 0; i < S.cells.length; i++) {
+      if (!S.cells[i]) continue;
+      for (var j = i + 1; j < S.cells.length; j++) {
+        if (!S.cells[j]) continue;
+        if (S.cells[i].k === S.cells[j].k) {
+          var sp = SPECIES[S.cells[i].k];
+          if (sp && sp.evolve && typeof sp.evolve === 'string') {
+            mergeCells(i, j);
+            merged++;
+            break;
+          }
+        }
+      }
+    }
+    return merged;
+  }
+
+  // --- SYNTHESIS BENCH (ごうせい台) ---
+  function updateGouseiUI() {
+    var slotA = document.getElementById('gouseiSlotA');
+    var slotB = document.getElementById('gouseiSlotB');
+    var btn = document.getElementById('btnDoGousei');
+    var hint = document.getElementById('gouseiHint');
+    if (!slotA || !slotB || !btn || !hint) return;
+
+    slotA.innerHTML = S.gousei[0] ? renderSlimeSvg(S.gousei[0].k, S.gousei[0].shiny, 38) : '<i data-lucide="plus" style="color:#adb5bd;"></i>';
+    slotB.innerHTML = S.gousei[1] ? renderSlimeSvg(S.gousei[1].k, S.gousei[1].shiny, 38) : '<i data-lucide="plus" style="color:#adb5bd;"></i>';
+
+    if (S.gousei[0] && S.gousei[1]) {
+      btn.disabled = false;
+      var key = recipeKey(S.gousei[0].k, S.gousei[1].k);
+      hint.textContent = RECIPES[key] ? 'レシピあり！' : '未知の組み合わせ';
+      hint.style.color = RECIPES[key] ? '#2b8a3e' : '#e67e22';
+    } else {
+      btn.disabled = true;
+      hint.textContent = '2匹セット';
+      hint.style.color = 'inherit';
+    }
+    lucide.createIcons();
+  }
+
+  function doGousei() {
+    var a = S.gousei[0];
+    var b = S.gousei[1];
+    if (!a || !b) return;
+
+    var key = recipeKey(a.k, b.k);
+    var product = RECIPES[key];
+
+    if (product) {
+      sfxFanfare();
+      var shiny = a.shiny || b.shiny || (Math.random() < (0.02 + (S.fac.spring ? 0.04 : 0)));
+      S.recipesFound[key] = product;
+      recordDex(product, shiny);
+      S.gousei = [null, null];
+      addSlime(product, shiny);
+      updateGouseiUI();
+      renderDex();
+      renderEvolutionTree();
+      showModal('合成大成功！', `
+        <div style="text-align: center;">
+          ${renderSlimeSvg(product, shiny, 70)}
+          <h4 style="color: var(--primary); margin-top: 6px;">${SPECIES[product].name} が誕生！</h4>
+          <p style="font-size: 0.8rem; color: #495057;">${SPECIES[product].desc}</p>
+        </div>
+      `);
+    } else {
+      sfxPop();
+      // Safe return
+      addSlime(a.k, a.shiny);
+      addSlime(b.k, b.shiny);
+      S.gousei = [null, null];
+      updateGouseiUI();
+      showModal('合成失敗…', '新しいレシピは見つかりませんでしたが、2匹とも無事に牧場へ戻りました！');
+    }
+  }
+
+  // --- BREEDING NEST (すみか) ---
+  function updateNestUI() {
+    var slotA = document.getElementById('nestSlotA');
+    var slotB = document.getElementById('nestSlotB');
+    var btn = document.getElementById('btnHatchNest');
+    var timerText = document.getElementById('nestTimerText');
+    if (!slotA || !slotB || !btn || !timerText) return;
+
+    slotA.innerHTML = S.nest.a ? renderSlimeSvg(S.nest.a.k, S.nest.a.shiny, 38) : '<i data-lucide="plus" style="color:#adb5bd;"></i>';
+    slotB.innerHTML = S.nest.b ? renderSlimeSvg(S.nest.b.k, S.nest.b.shiny, 38) : '<i data-lucide="plus" style="color:#adb5bd;"></i>';
+
+    if (S.nest.a && S.nest.b) {
+      var remain = Math.max(0, S.nest.eggAt - Date.now());
+      if (remain <= 0) {
+        btn.disabled = false;
+        btn.textContent = 'タマゴ孵化！';
+        btn.className = 'btn btn-primary btn-sm';
+        timerText.textContent = 'たまご誕生！';
+      } else {
+        btn.disabled = true;
+        btn.textContent = Math.ceil(remain / 1000) + '秒';
+        btn.className = 'btn btn-secondary btn-sm';
+        timerText.textContent = '産卵中...';
+      }
+    } else {
+      btn.disabled = true;
+      btn.textContent = '待機中';
+      btn.className = 'btn btn-secondary btn-sm';
+      timerText.textContent = '同種2匹';
+    }
+    lucide.createIcons();
+  }
+
+  function hatchNest() {
+    if (!S.nest.a || !S.nest.b) return;
+    var kind = S.nest.a.k;
+    var shinyChance = 0.05;
+    if (S.nest.a.shiny && S.nest.b.shiny) shinyChance = 0.5;
+    else if (S.nest.a.shiny || S.nest.b.shiny) shinyChance = 0.2;
+
+    var isShiny = Math.random() < shinyChance;
+    sfxMerge();
+    addSlime(kind, isShiny);
+
+    // Parents stay in nest or return? Let them stay for continuous breeding!
+    S.nest.eggAt = Date.now() + 30000;
+    updateNestUI();
+    showTip('🐣 すみかから ' + SPECIES[kind].name + ' の赤ちゃんが生まれました！');
+  }
+
+  // --- WILD FIELD & CATCH RING (のはら) ---
+  function spawnWildSlimes() {
+    var field = FIELDS[currentFieldId];
+    wildSlimes = [];
+    var count = 3 + Math.floor(Math.random() * 2);
+    for (var i = 0; i < count; i++) {
+      var speciesKey = field.species[Math.floor(Math.random() * field.species.length)];
+      var isShiny = Math.random() < 0.03;
+      wildSlimes.push({
+        id: i,
+        k: speciesKey,
+        shiny: isShiny,
+        x: 15 + Math.random() * 70,
+        y: 20 + Math.random() * 60
+      });
+    }
+    var badge = document.getElementById('badgeWildCount');
+    if (badge) badge.textContent = wildSlimes.length;
+    renderFieldScene();
+  }
+
+  function renderFieldScene() {
+    var canvasArea = document.getElementById('fieldCanvasArea');
+    if (!canvasArea) return;
+    canvasArea.innerHTML = '';
+    canvasArea.style.background = FIELDS[currentFieldId].bg;
+
+    wildSlimes.forEach(function(ws, idx) {
+      var div = document.createElement('div');
+      div.className = 'sf-wild-slime';
+      div.style.left = ws.x + '%';
+      div.style.top = ws.y + '%';
+      div.innerHTML = renderSlimeSvg(ws.k, ws.shiny, 56);
+      div.onclick = function() {
+        startCatchRing(ws, idx);
+      };
+      canvasArea.appendChild(div);
+    });
+  }
+
+  function startCatchRing(ws, idx) {
+    if (S.nets <= 0) {
+      showTip('あみが足りません！時間で回復するのを待ってね');
+      return;
+    }
+    initAudio();
+    var stage = SPECIES[ws.k].stage || 1;
+    var baseZone = [0, 0.45, 0.30, 0.20, 0.14, 0.10][stage] || 0.25;
+    if (ws.shiny) baseZone *= 0.6;
+    var lapMs = 1200 - (stage - 1) * 80;
+
+    catchingState = {
+      slime: ws,
+      slimeIdx: idx,
+      lapMs: lapMs,
+      zoneStart: Math.random(),
+      zoneSize: baseZone,
+      t0: Date.now()
+    };
+
+    var modal = document.getElementById('catchModal');
+    if (modal) modal.style.display = 'flex';
+    requestAnimationFrame(updateCatchCanvas);
+  }
+
+  function updateCatchCanvas() {
+    if (!catchingState) return;
+    var canvas = document.getElementById('catchCanvas');
+    if (!canvas) return;
+    var ctx = canvas.getContext('2d');
+    var w = canvas.width, h = canvas.height;
+    ctx.clearRect(0, 0, w, h);
+
+    var cx = w / 2, cy = h / 2, r = 50;
+    var elapsed = Date.now() - catchingState.t0;
+    var progress = (elapsed / catchingState.lapMs) % 1;
+
+    // Draw background track
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.lineWidth = 10;
+    ctx.strokeStyle = '#dee2e6';
+    ctx.stroke();
+
+    // Draw green catch zone
+    var startAngle = (catchingState.zoneStart * Math.PI * 2) - Math.PI / 2;
+    var endAngle = startAngle + (catchingState.zoneSize * Math.PI * 2);
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, startAngle, endAngle);
+    ctx.lineWidth = 10;
+    ctx.strokeStyle = '#40c057';
+    ctx.stroke();
+
+    // Draw rotating cursor
+    var curAngle = (progress * Math.PI * 2) - Math.PI / 2;
+    var kx = cx + Math.cos(curAngle) * r;
+    var ky = cy + Math.sin(curAngle) * r;
+    ctx.beginPath();
+    ctx.arc(kx, ky, 7, 0, Math.PI * 2);
+    ctx.fillStyle = '#f03e3e';
+    ctx.fill();
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = '#ffffff';
+    ctx.stroke();
+
+    if (catchingState) {
+      requestAnimationFrame(updateCatchCanvas);
+    }
+  }
+
+  function handleCatchTap() {
+    if (!catchingState) return;
+    S.nets--;
+    var elapsed = Date.now() - catchingState.t0;
+    var progress = (elapsed / catchingState.lapMs) % 1;
+    var diff = (progress - catchingState.zoneStart + 1) % 1;
+
+    var success = diff <= catchingState.zoneSize;
+    var ws = catchingState.slime;
+    var idx = catchingState.slimeIdx;
+    catchingState = null;
+
+    var modal = document.getElementById('catchModal');
+    if (modal) modal.style.display = 'none';
+
+    if (success) {
+      sfxFanfare();
+      var added = addSlime(ws.k, ws.shiny);
+      if (added) {
+        showTip('🎯 捕獲成功！' + SPECIES[ws.k].name + ' を牧場に迎えました！');
+      }
+      wildSlimes.splice(idx, 1);
+      renderFieldScene();
+    } else {
+      sfxPop();
+      showTip('💨 ああっと！スライムに逃げられてしまった…');
+      wildSlimes.splice(idx, 1);
+      renderFieldScene();
+    }
+    renderHud();
+  }
+
+  // --- BOSS BATTLE (とうばつ) ---
+  function getTop3Slimes(bossLine) {
+    var alive = [];
+    for (var i = 0; i < S.cells.length; i++) {
+      var item = S.cells[i];
+      if (item && SPECIES[item.k]) {
+        var sp = SPECIES[item.k];
+        var mood = CARE_MULTS[getMoodLevel(item.careAt, Date.now())];
+        var effPower = sp.power * (item.shiny ? 1.5 : 1) * mood * getTypeMult(sp.line, bossLine);
+        alive.push({ item: item, effPower: effPower, sp: sp, idx: i });
+      }
+    }
+    alive.sort(function(a, b) { return b.effPower - a.effPower; });
+    return alive.slice(0, 3);
+  }
+
+  function startBossBattle() {
+    var bossIndex = Math.min(S.bossCleared, BOSSES.length - 1);
+    var boss = BOSSES[bossIndex];
+    var scaledHp = Math.round(boss.hp * Math.pow(1.3, Math.max(0, S.bossCleared - (BOSSES.length - 1))));
+
+    battleState = {
+      bossIndex: bossIndex,
+      bossHp: scaledHp,
+      maxHp: scaledHp,
+      t0: Date.now(),
+      durationMs: 12000,
+      lastSweep: -1,
+      bonus: 0,
+      active: true
+    };
+
+    var bossWrap = document.getElementById('bossSvgWrap');
+    var bName = document.getElementById('bossName');
+    var bType = document.getElementById('bossTypeTag');
+    if (bossWrap) bossWrap.innerHTML = renderSlimeSvg(boss.line === 'fire' ? 'magma' : (boss.line === 'water' ? 'wave' : 'leaf'), false, 68);
+    if (bName) bName.textContent = boss.name + (S.bossCleared >= BOSSES.length ? ' +' + (S.bossCleared - BOSSES.length + 1) : '');
+    if (bType) bType.textContent = '系統: ' + (boss.line === 'grass' ? 'くさ' : (boss.line === 'water' ? 'みず' : (boss.line === 'fire' ? 'ほのお' : '無属性')));
+
+    updateBattleView();
+  }
+
+  function updateBattleView() {
+    if (!battleState || !battleState.active) return;
+    var boss = BOSSES[battleState.bossIndex];
+    var team = getTop3Slimes(boss.line);
+
+    for (var i = 0; i < 3; i++) {
+      var slot = document.getElementById('partySlot' + i);
+      if (!slot) continue;
+      if (team[i]) {
+        var tm = team[i];
+        var mult = getTypeMult(tm.sp.line, boss.line);
+        slot.className = 'sf-party-slot ' + (mult > 1 ? 'adv' : (mult < 1 ? 'dis' : ''));
+        slot.innerHTML = `
+          ${renderSlimeSvg(tm.item.k, tm.item.shiny, 44)}
+          <b style="font-size:0.72rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:68px;">${tm.sp.name}</b>
+          <small style="font-size:0.68rem; color:${mult > 1 ? '#2b8a3e' : (mult < 1 ? '#fa5252' : '#495057')};">
+            攻 ${Math.round(tm.effPower)}
+          </small>
+        `;
+      } else {
+        slot.className = 'sf-party-slot';
+        slot.innerHTML = `<small style="color:#adb5bd;">空き</small>`;
+      }
+    }
+
+    // Boss HP Bar
+    var hpText = document.getElementById('bossHpText');
+    var hpFill = document.getElementById('bossHpFill');
+    if (hpText) hpText.textContent = Math.max(0, Math.round(battleState.bossHp)) + ' / ' + battleState.maxHp;
+    if (hpFill) hpFill.style.width = Math.max(0, (battleState.bossHp / battleState.maxHp) * 100) + '%';
+  }
+
+  function cheerTap() {
+    if (!battleState || !battleState.active) return;
+    initAudio();
+    var elapsed = Date.now() - battleState.t0;
+    var sweepMs = 1400;
+    var curSweep = Math.floor(elapsed / sweepMs);
+    if (curSweep === battleState.lastSweep) {
+      showTip('おうえんは1往復に1回だけ有効です！');
+      return;
+    }
+    battleState.lastSweep = curSweep;
+
+    var phase = (elapsed % sweepMs) / sweepMs;
+    var pos = phase < 0.5 ? phase * 2 : (1 - phase) * 2; // 0 to 1 back and forth
+
+    // Crit zone is between 0.42 and 0.58
+    if (Math.abs(pos - 0.5) <= 0.08) {
+      sfxCrit();
+      battleState.bonus += 0.08;
+      battleState.bossHp -= battleState.maxHp * 0.12;
+      showFloatOnBattle('かいしんのいちげき！', '#ffd43b');
+    } else {
+      sfxPop();
+      battleState.bonus += 0.02;
+      battleState.bossHp -= battleState.maxHp * 0.03;
+      showFloatOnBattle('がんばれ！', '#51cf66');
+    }
+    updateBattleView();
+  }
+
+  function showFloatOnBattle(text, color) {
+    var stage = document.getElementById('stageContainer');
+    if (!stage) return;
+    var div = document.createElement('div');
+    div.className = 'floating-text';
+    div.style.left = '50%';
+    div.style.top = '65%';
+    div.style.color = color;
+    div.textContent = text;
+    stage.appendChild(div);
+    setTimeout(function() { if (div.parentNode) div.parentNode.removeChild(div); }, 900);
+  }
+
+  function tickBattle() {
+    if (!battleState || !battleState.active) return;
+    var boss = BOSSES[battleState.bossIndex];
+    var team = getTop3Slimes(boss.line);
+    var totalPower = team.reduce(function(sum, tm) { return sum + tm.effPower; }, 0);
+
+    var dps = (totalPower / (battleState.durationMs / 1000)) * (1 + battleState.bonus);
+    battleState.bossHp -= dps * 0.1;
+
+    // Move cursor
+    var elapsed = Date.now() - battleState.t0;
+    var sweepMs = 1400;
+    var phase = (elapsed % sweepMs) / sweepMs;
+    var pos = phase < 0.5 ? phase * 2 : (1 - phase) * 2;
+    var cursor = document.getElementById('spiritCursor');
+    if (cursor) cursor.style.left = (pos * 100) + '%';
+
+    updateBattleView();
+
+    if (battleState.bossHp <= 0) {
+      // Victory!
+      battleState.active = false;
+      sfxFanfare();
+      S.bossCleared++;
+      var reward = boss.reward;
+      S.coins += reward;
+      S.lifetimeCoins += reward;
+      showModal('ボス討伐成功！', `
+        <h4 style="color: #2b8a3e; margin-bottom: 8px;">見事、${boss.name} を撃破しました！</h4>
+        <p>報酬: <b>+${reward.toLocaleString()} コイン</b> 獲得！</p>
+        <p style="font-size:0.8rem; color:#868e96; margin-top:4px;">次のボスや新エリアが解放されました！</p>
+      `);
+      renderHud();
+      startBossBattle();
+    } else if (Date.now() - battleState.t0 >= battleState.durationMs) {
+      // Time up
+      battleState.active = false;
+      showTip('時間切れ…ボスを倒せませんでした。スライムを育てて再挑戦しよう！');
+      setTimeout(startBossBattle, 2000);
+    }
+  }
+
+  // --- EXPEDITIONS (たんけん) ---
+  function updateTankenUI() {
+    var list = document.getElementById('tankenList');
+    if (!list) return;
+    list.innerHTML = '';
+
+    EXPEDITIONS.forEach(function(exp) {
+      var isLocked = S.bossCleared < exp.reqBoss;
+      var card = document.createElement('div');
+      card.className = 'sf-tanken-card';
+
+      var statusHtml = '';
+      if (isLocked) {
+        statusHtml = `<small style="color:#fa5252;">ボス${exp.reqBoss}体撃破で解放</small>`;
+      } else if (S.tanken && S.tanken.id === exp.id) {
+        var remain = Math.max(0, (S.tanken.startAt + exp.durationSec * 1000) - Date.now());
+        if (remain <= 0) {
+          statusHtml = `<button class="btn btn-primary btn-sm" onclick="claimTanken('${exp.id}')">帰還！報酬受取</button>`;
+        } else {
+          statusHtml = `<span style="font-size:0.78rem; font-weight:700; color:#0c8599;">探索中: ${Math.ceil(remain/1000)}秒</span>`;
+        }
+      } else {
+        var canStart = !S.tanken;
+        statusHtml = `<button class="btn btn-primary btn-sm" ${canStart ? '' : 'disabled'} onclick="startTanken('${exp.id}')">出発する</button>`;
+      }
+
+      card.innerHTML = `
+        <div>
+          <b style="font-size:0.88rem; color:#1098ad;">${exp.name}</b>
+          <small style="display:block; font-size:0.72rem; color:#495057;">
+            所要時間: ${exp.durationSec}秒 | レアドロップ: ${SPECIES[exp.rareDrop].name}
+          </small>
+        </div>
+        <div>${statusHtml}</div>
+      `;
+      list.appendChild(card);
+    });
+  }
+
+  window.startTanken = function(expId) {
+    var exp = EXPEDITIONS.find(function(e) { return e.id === expId; });
+    if (!exp) return;
+    sfxPop();
+    S.tanken = {
+      id: exp.id,
+      startAt: Date.now(),
+      durationSec: exp.durationSec
+    };
+    showTip(exp.name + ' へ探検隊が出発しました！');
+    updateTankenUI();
+  };
+
+  window.claimTanken = function(expId) {
+    var exp = EXPEDITIONS.find(function(e) { return e.id === expId; });
+    if (!exp || !S.tanken) return;
+    sfxFanfare();
+    var coinsWon = Math.floor(exp.coinMin + Math.random() * (exp.coinMax - exp.coinMin));
+    S.coins += coinsWon;
+    S.lifetimeCoins += coinsWon;
+
+    var gotSlime = false;
+    if (Math.random() < 0.35) {
+      gotSlime = addSlime(exp.rareDrop, Math.random() < 0.05);
+    }
+    S.tanken = null;
+
+    showModal('探検隊が帰還しました！', `
+      <p>獲得コイン: <b>+${coinsWon.toLocaleString()} コイン</b></p>
+      ${gotSlime ? `<p style="color:#2b8a3e; font-weight:900; margin-top:6px;">✨ 野生のスライム (${SPECIES[exp.rareDrop].name}) を連れて帰ってきました！</p>` : ''}
+    `);
+    renderHud();
+    updateTankenUI();
+  };
+
+  // --- TABS & PANELS (Egg, Facility, Dex, Tree, Rebirth) ---
+  function renderPanelContent() {
+    var container = document.getElementById('panelContent');
+    if (!container) return;
+
+    if (currentTab === 'egg') {
+      var grassPrice = getEggPrice('grass');
+      var waterPrice = getEggPrice('water');
+      var firePrice = getEggPrice('fire');
+      var waterUnlocked = S.bossCleared >= 1;
+      var fireUnlocked = S.bossCleared >= 3;
+      var eggLvCost = S.eggLevel * 250;
+
+      container.innerHTML = `
+        <div class="sf-shop-list">
+          <div style="font-weight:900; font-size:0.82rem; color:var(--primary); margin-bottom:2px;">
+            タマゴ購入
+          </div>
+          <!-- Grass Egg -->
+          <div class="sf-item-row">
+            <div class="sf-item-icon">${renderSlimeSvg('green', false, 36)}</div>
+            <div class="sf-item-info">
+              <b>みどりのタマゴ</b>
+              <small>くさ系統のスライムが誕生</small>
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="buyEgg('grass')" ${S.coins >= grassPrice ? '' : 'disabled'}>
+              ${fmtBig(grassPrice)} コイン
+            </button>
+          </div>
+          <!-- Water Egg -->
+          <div class="sf-item-row" style="${waterUnlocked ? '' : 'opacity:0.6;'}">
+            <div class="sf-item-icon">${renderSlimeSvg('blue', false, 36)}</div>
+            <div class="sf-item-info">
+              <b>あおのタマゴ</b>
+              <small>${waterUnlocked ? 'みず系統のスライムが誕生' : '🔒 ボス1体撃破で解放'}</small>
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="buyEgg('water')" ${waterUnlocked && S.coins >= waterPrice ? '' : 'disabled'}>
+              ${fmtBig(waterPrice)} コイン
+            </button>
+          </div>
+          <!-- Fire Egg -->
+          <div class="sf-item-row" style="${fireUnlocked ? '' : 'opacity:0.6;'}">
+            <div class="sf-item-icon">${renderSlimeSvg('red', false, 36)}</div>
+            <div class="sf-item-info">
+              <b>あかのタマゴ</b>
+              <small>${fireUnlocked ? 'ほのお系統のスライムが誕生' : '🔒 ボス3体撃破で解放'}</small>
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="buyEgg('fire')" ${fireUnlocked && S.coins >= firePrice ? '' : 'disabled'}>
+              ${fmtBig(firePrice)} コイン
+            </button>
+          </div>
+
+          <div style="font-weight:900; font-size:0.82rem; color:var(--primary); margin-top:10px; margin-bottom:2px;">
+            タマゴの強化
+          </div>
+          <!-- Egg Level -->
+          <div class="sf-item-row">
+            <div class="sf-item-icon"><i data-lucide="sparkles" style="color:#fab005;"></i></div>
+            <div class="sf-item-info">
+              <b>タマゴLv ${S.eggLevel} → ${S.eggLevel + 1}</b>
+              <small>2段階目のスライムが生まれやすくなる</small>
+            </div>
+            <button class="btn btn-secondary btn-sm" onclick="upgradeEggLevel()" ${S.coins >= eggLvCost ? '' : 'disabled'}>
+              ${fmtBig(eggLvCost)} コイン
+            </button>
+          </div>
+        </div>
+      `;
+    } else if (currentTab === 'fac') {
+      var facHtml = FACILITIES.map(function(f) {
+        var bought = !!S.fac[f.id];
+        return `
+          <div class="sf-item-row">
+            <div class="sf-item-icon"><i data-lucide="wrench" style="color:var(--primary);"></i></div>
+            <div class="sf-item-info">
+              <b>${f.name}</b>
+              <small>${f.desc}</small>
+            </div>
+            ${bought ?
+              `<span style="font-size:0.75rem; font-weight:900; color:#2b8a3e;">設置済み</span>` :
+              `<button class="btn btn-primary btn-sm" onclick="buyFacility('${f.id}')" ${S.coins >= f.cost ? '' : 'disabled'}>
+                ${fmtBig(f.cost)} コイン
+              </button>`
+            }
+          </div>
+        `;
+      }).join('');
+
+      var autoSwitchHtml = S.fac.automerge ? `
+        <div style="margin-top:12px; padding:8px; background:#fff; border-radius:12px; border:1.5px solid var(--outline-variant); display:flex; justify-content:space-between; align-items:center;">
+          <div>
+            <b>おまかせ進化の自動実行</b>
+            <small style="display:block; color:#868e96;">ONにすると自動で同じスライムを合体</small>
+          </div>
+          <button class="btn ${S.autoMergeOn ? 'btn-primary' : 'btn-secondary'} btn-sm" onclick="toggleAutoMerge()">
+            ${S.autoMergeOn ? 'ON' : 'OFF'}
+          </button>
+        </div>
+      ` : '';
+
+      container.innerHTML = `
+        <div class="sf-shop-list">
+          <div style="font-weight:900; font-size:0.82rem; color:var(--primary); margin-bottom:2px;">
+            施設・道具の購入
+          </div>
+          ${facHtml}
+          ${autoSwitchHtml}
+        </div>
+      `;
+    } else if (currentTab === 'dex') {
+      renderDex();
+    } else if (currentTab === 'tree') {
+      renderEvolutionTree();
+    } else if (currentTab === 'rebirth') {
+      var canRebirth = S.bossCleared >= 5 || S.dex['rainbow'];
+      var shardsEarned = Math.max(1, Math.floor(S.bossCleared / 2));
+      container.innerHTML = `
+        <div style="text-align: center; padding: 12px 6px;">
+          <div style="font-size: 2.4rem; margin-bottom: 4px;">🌈</div>
+          <h4 style="color: var(--primary); font-size: 1rem; margin-bottom: 6px;">にじの転生 (Rebirth)</h4>
+          <p style="font-size: 0.82rem; color: #495057; line-height: 1.5; margin-bottom: 12px;">
+            にじの力で新しい牧場を開拓します。<br>
+            スライムとコインはリセットされますが、<strong>にじのかけら</strong>を獲得し、<strong>収入と強さが永久に+${shardsEarned * 10}%</strong>アップします！<br>
+            （図鑑やレシピの記録はそのまま残ります）
+          </p>
+          <div style="background:#fff; border:1.5px solid var(--outline-variant); border-radius:12px; padding:10px; margin-bottom:14px;">
+            <div style="font-size:0.75rem; color:#868e96;">所持にじのかけら</div>
+            <b style="font-size:1.2rem; color:#845ef7;">✨ ${S.shards} 個 (強化 +${S.shards * 10}%)</b>
+          </div>
+          <button class="btn btn-primary" onclick="doRebirth()" ${canRebirth ? '' : 'disabled'} style="width:100%; padding:10px;">
+            ${canRebirth ? `にじのかけらを ${shardsEarned}個 獲得して転生！` : '🔒 ボス5体撃破で転生可能'}
+          </button>
+        </div>
+      `;
+    }
+    lucide.createIcons();
+  }
+
+  function renderDex() {
+    var container = document.getElementById('panelContent');
+    if (!container || currentTab !== 'dex') return;
+
+    var keys = Object.keys(SPECIES);
+    var countDiscovered = 0;
+    keys.forEach(function(k) { if (S.dex[k] && (S.dex[k].normal || S.dex[k].shiny)) countDiscovered++; });
+
+    var cellsHtml = keys.map(function(k) {
+      var d = S.dex[k] || { normal: false, shiny: false };
+      var known = d.normal || d.shiny;
+      return `
+        <div class="sf-dex-cell ${known ? '' : 'unknown'}" onclick="showDexDetail('${k}')">
+          ${renderSlimeSvg(k, d.shiny, 42)}
+          <div class="sf-dex-cell-name">${known ? SPECIES[k].name : '？？？'}</div>
+          ${d.shiny ? '<span style="position:absolute; top:2px; right:2px; font-size:0.68rem;">✨</span>' : ''}
+        </div>
+      `;
+    }).join('');
+
+    container.innerHTML = `
+      <div>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; font-weight:900; color:var(--primary); font-size:0.85rem;">
+          <span>スライム図鑑</span>
+          <small style="color:#868e96;">発見: ${countDiscovered} / ${keys.length}</small>
+        </div>
+        <div class="sf-dex-grid">
+          ${cellsHtml}
+        </div>
+      </div>
+    `;
+  }
+
+  function renderEvolutionTree() {
+    var container = document.getElementById('panelContent');
+    if (!container || currentTab !== 'tree') return;
+
+    container.innerHTML = `
+      <div class="sf-tree-container">
+        <!-- Grass line -->
+        <div class="sf-tree-branch">
+          <div class="sf-tree-title" style="color:#2b8a3e;"><i data-lucide="sprout"></i> くさ系統の進化</div>
+          <div class="sf-tree-steps">
+            <div class="sf-tree-node">${renderSlimeSvg('green', false, 36)}<small>みどり</small></div>
+            <span class="sf-tree-arrow">→</span>
+            <div class="sf-tree-node">${renderSlimeSvg('leaf', false, 36)}<small>はっぱ</small></div>
+            <span class="sf-tree-arrow">→</span>
+            <div class="sf-tree-node">${renderSlimeSvg('bud', false, 36)}<small>つぼみ</small></div>
+            <span class="sf-tree-arrow">→</span>
+            <div class="sf-tree-node">${renderSlimeSvg('flower', false, 36)}<small>はな</small></div>
+            <small style="margin:0 2px;">or</small>
+            <div class="sf-tree-node">${renderSlimeSvg('mushroom', false, 36)}<small>きのこ</small></div>
+          </div>
+        </div>
+
+        <!-- Water line -->
+        <div class="sf-tree-branch">
+          <div class="sf-tree-title" style="color:#1971c2;"><i data-lucide="droplets"></i> みず系統の進化</div>
+          <div class="sf-tree-steps">
+            <div class="sf-tree-node">${renderSlimeSvg('blue', false, 36)}<small>あお</small></div>
+            <span class="sf-tree-arrow">→</span>
+            <div class="sf-tree-node">${renderSlimeSvg('bubble', false, 36)}<small>あわ</small></div>
+            <span class="sf-tree-arrow">→</span>
+            <div class="sf-tree-node">${renderSlimeSvg('wave', false, 36)}<small>なみ</small></div>
+            <span class="sf-tree-arrow">→</span>
+            <div class="sf-tree-node">${renderSlimeSvg('sea', false, 36)}<small>うみ</small></div>
+            <small style="margin:0 2px;">or</small>
+            <div class="sf-tree-node">${renderSlimeSvg('ice', false, 36)}<small>こおり</small></div>
+          </div>
+        </div>
+
+        <!-- Fire line -->
+        <div class="sf-tree-branch">
+          <div class="sf-tree-title" style="color:#e64a19;"><i data-lucide="flame"></i> ほのお系統の進化</div>
+          <div class="sf-tree-steps">
+            <div class="sf-tree-node">${renderSlimeSvg('red', false, 36)}<small>あか</small></div>
+            <span class="sf-tree-arrow">→</span>
+            <div class="sf-tree-node">${renderSlimeSvg('flame', false, 36)}<small>ほのお</small></div>
+            <span class="sf-tree-arrow">→</span>
+            <div class="sf-tree-node">${renderSlimeSvg('magma', false, 36)}<small>マグマ</small></div>
+            <span class="sf-tree-arrow">→</span>
+            <div class="sf-tree-node">${renderSlimeSvg('sun', false, 36)}<small>たいよう</small></div>
+            <small style="margin:0 2px;">or</small>
+            <div class="sf-tree-node">${renderSlimeSvg('thunder', false, 36)}<small>かみなり</small></div>
+          </div>
+        </div>
+
+        <!-- Discovered recipes -->
+        <div class="sf-tree-branch">
+          <div class="sf-tree-title" style="color:#ae3ec9;"><i data-lucide="sparkle"></i> 発見済みのごうせいレシピ</div>
+          <div style="font-size:0.75rem; color:#495057;">
+            ${Object.keys(RECIPES).map(function(k) {
+              var target = RECIPES[k];
+              var parts = k.split('+');
+              var found = S.recipesFound[k];
+              return `
+                <div style="padding:3px 0; border-bottom:1px dashed #dee2e6; display:flex; justify-content:space-between;">
+                  <span>${found ? `${SPECIES[parts[0]].name} ＋ ${SPECIES[parts[1]].name}` : '？？？ ＋ ？？？'}</span>
+                  <b>${found ? `➔ ${SPECIES[target].name}` : '未発見'}</b>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      </div>
+    `;
+    lucide.createIcons();
+  }
+
+  window.showDexDetail = function(k) {
+    var sp = SPECIES[k];
+    var d = S.dex[k] || { normal: false, shiny: false };
+    if (!d.normal && !d.shiny) {
+      showModal('未発見のスライム', 'まだ出会っていないスライムです。タマゴ、進化、合成で探してみよう！');
+      return;
+    }
+    showModal(sp.name, `
+      <div style="text-align: center;">
+        ${renderSlimeSvg(k, d.shiny, 72)}
+        <div style="margin-top:6px; font-weight:700; color:var(--primary);">
+          系統: ${sp.line === 'grass' ? 'くさ' : (sp.line === 'water' ? 'みず' : (sp.line === 'fire' ? 'ほのお' : '特殊'))} | 段階: ${sp.stage}
+        </div>
+        <div style="display:flex; justify-content:center; gap:16px; margin:8px 0; font-size:0.85rem;">
+          <span>秒収: <b>+${sp.income}/秒</b></span>
+          <span>つよさ: <b>${sp.power}</b></span>
+        </div>
+        <p style="font-size:0.8rem; color:#495057; text-align:left; background:#f8f9fa; padding:8px; border-radius:8px;">
+          ${sp.desc}
+        </p>
+      </div>
+    `);
+  };
+
+  window.buyEgg = function(line) {
+    var price = getEggPrice(line);
+    if (S.coins < price) return;
+    sfxPop();
+    S.coins -= price;
+    S.eggBought[line] = (S.eggBought[line] || 0) + 1;
+
+    // Egg level logic: chance to hatch stage 2
+    var key = line === 'grass' ? 'green' : (line === 'water' ? 'blue' : 'red');
+    if (S.eggLevel >= 2 && Math.random() < 0.25) {
+      key = SPECIES[key].evolve;
+    }
+    addSlime(key);
+    renderHud();
+    renderPanelContent();
+  };
+
+  window.upgradeEggLevel = function() {
+    var cost = S.eggLevel * 250;
+    if (S.coins < cost) return;
+    sfxMerge();
+    S.coins -= cost;
+    S.eggLevel++;
+    showTip('🎉 タマゴLvが ' + S.eggLevel + ' にアップしました！');
+    renderHud();
+    renderPanelContent();
+  };
+
+  window.buyFacility = function(id) {
+    var f = FACILITIES.find(function(item) { return item.id === id; });
+    if (!f || S.coins < f.cost || S.fac[f.id]) return;
+    sfxMerge();
+    S.coins -= f.cost;
+    S.fac[f.id] = true;
+    showTip('🛠️ ' + f.name + ' を設置しました！');
+    renderHud();
+    renderPanelContent();
+  };
+
+  window.toggleAutoMerge = function() {
+    S.autoMergeOn = !S.autoMergeOn;
+    renderPanelContent();
+  };
+
+  window.doRebirth = function() {
+    var shardsEarned = Math.max(1, Math.floor(S.bossCleared / 2));
+    sfxFanfare();
+    S.shards += shardsEarned;
+    S.coins = 30;
+    S.lifetimeCoins = 30;
+    S.cells = new Array(16).fill(null);
+    S.cells[0] = { k: 'green', shiny: false, careAt: Date.now(), food: null };
+    S.bossCleared = 0;
+    S.gousei = [null, null];
+    S.nest = { a: null, b: null, eggAt: 0, ready: false };
+
+    showModal('転生完了！', `
+      <div style="text-align: center;">
+        <div style="font-size: 2.2rem;">✨🌈✨</div>
+        <h4 style="color:var(--primary); margin:6px 0;">新しい牧場がスタート！</h4>
+        <p>にじのかけらを <b>${shardsEarned}個</b> 獲得しました！<br>永久ボーナス: <b>+${S.shards * 10}%</b></p>
+      </div>
+    `);
+    renderRanchGrid();
+    renderHud();
+    renderPanelContent();
+    startBossBattle();
+  };
+
+  // --- RANCH GRID RENDERING & DRAG-AND-DROP ---
+  var dragSourceIndex = -1;
+
+  function renderRanchGrid() {
+    var grid = document.getElementById('ranchGrid');
+    if (!grid) return;
+    grid.innerHTML = '';
+
+    for (var i = 0; i < 16; i++) {
+      var item = S.cells[i];
+      var cell = document.createElement('div');
+      cell.className = 'sf-cell' + (selectedCellIndex === i ? ' selected' : '');
+      cell.dataset.index = i;
+
+      if (item && SPECIES[item.k]) {
+        var sp = SPECIES[item.k];
+        var mood = getMoodLevel(item.careAt, Date.now());
+        cell.innerHTML = `
+          <div class="sf-slime-wrapper">
+            <span class="sf-mood-icon">${CARE_MARKS[mood]}</span>
+            ${item.shiny ? '<span class="sf-shiny-badge">✨</span>' : ''}
+            <div class="sf-slime-svg">${renderSlimeSvg(item.k, item.shiny, 50)}</div>
+            <span class="sf-cell-name">${sp.name}</span>
+          </div>
+        `;
+      } else {
+        cell.innerHTML = `<span style="font-size:1.1rem; color:#ced4da;">＋</span>`;
+      }
+
+      setupPointerHandlers(cell, i);
+      grid.appendChild(cell);
+    }
+  }
+
+  function setupPointerHandlers(cell, idx) {
+    cell.onpointerdown = function(e) {
+      initAudio();
+      dragSourceIndex = idx;
+      cell.setPointerCapture(e.pointerId);
+    };
+
+    cell.onpointermove = function(e) {
+      if (dragSourceIndex === -1) return;
+      var el = document.elementFromPoint(e.clientX, e.clientY);
+      var targetCell = el ? el.closest('.sf-cell') : null;
+      document.querySelectorAll('.sf-cell').forEach(function(c) { c.classList.remove('drop-target'); });
+      if (targetCell && targetCell !== cell) {
+        targetCell.classList.add('drop-target');
+      }
+    };
+
+    cell.onpointerup = function(e) {
+      if (dragSourceIndex === -1) return;
+      var el = document.elementFromPoint(e.clientX, e.clientY);
+      var targetCell = el ? el.closest('.sf-cell') : null;
+      document.querySelectorAll('.sf-cell').forEach(function(c) { c.classList.remove('drop-target'); });
+
+      if (targetCell) {
+        var toIdx = parseInt(targetCell.dataset.index, 10);
+        if (toIdx !== dragSourceIndex) {
+          // Merge or swap
+          mergeCells(dragSourceIndex, toIdx);
+        } else {
+          // Tap select
+          selectCell(toIdx);
+        }
+      }
+      dragSourceIndex = -1;
+    };
+  }
+
+  function selectCell(idx) {
+    if (selectedCellIndex === idx) {
+      selectedCellIndex = -1;
+    } else {
+      selectedCellIndex = idx;
+      sfxPop();
+    }
+    renderRanchGrid();
+    updateTipBar();
+  }
+
+  function updateTipBar() {
+    var tipText = document.getElementById('tipText');
+    var tipActions = document.getElementById('tipActions');
+    if (!tipText || !tipActions) return;
+
+    if (selectedCellIndex >= 0 && S.cells[selectedCellIndex]) {
+      var item = S.cells[selectedCellIndex];
+      var sp = SPECIES[item.k];
+      var moodIdx = getMoodLevel(item.careAt, Date.now());
+      tipText.innerHTML = `
+        <b>${sp.name}</b> (${CARE_NAMES[moodIdx]} ${CARE_MARKS[moodIdx]})
+        秒収: +${sp.income * (item.shiny ? 3 : 1) * CARE_MULTS[moodIdx]}/秒 | 強さ: ${sp.power}
+      `;
+      tipActions.style.display = 'flex';
+    } else {
+      tipText.textContent = 'スライムを選んで「なでる」や「エサ」でお世話しよう！';
+      tipActions.style.display = 'none';
+    }
+  }
+
+  function petSelectedSlime() {
+    if (selectedCellIndex < 0 || !S.cells[selectedCellIndex]) return;
+    initAudio();
+    sfxPop();
+    var item = S.cells[selectedCellIndex];
+    item.careAt = Date.now(); // reset care
+    createFloatText(selectedCellIndex, '♥ ごきげん！');
+    showTip('💕 ' + SPECIES[item.k].name + ' をなでました！');
+    renderRanchGrid();
+    updateTipBar();
+  }
+
+  function feedSelectedSlime() {
+    if (selectedCellIndex < 0 || !S.cells[selectedCellIndex]) return;
+    initAudio();
+    sfxCoin();
+    var item = S.cells[selectedCellIndex];
+    item.careAt = Date.now();
+    // Default food or prompt
+    item.food = 'nectar';
+    createFloatText(selectedCellIndex, 'おいしい！ +ごきげんMAX');
+    showTip('🍪 ' + SPECIES[item.k].name + ' にエサをあげました！');
+    renderRanchGrid();
+    updateTipBar();
+  }
+
+  function sendSelectedToGousei() {
+    if (selectedCellIndex < 0 || !S.cells[selectedCellIndex]) return;
+    var item = S.cells[selectedCellIndex];
+    if (!S.gousei[0]) {
+      S.gousei[0] = item;
+      S.cells[selectedCellIndex] = null;
+    } else if (!S.gousei[1]) {
+      S.gousei[1] = item;
+      S.cells[selectedCellIndex] = null;
+    } else {
+      showTip('ごうせい台はいっぱいです！');
+      return;
+    }
+    sfxPop();
+    selectedCellIndex = -1;
+    renderRanchGrid();
+    updateGouseiUI();
+    updateTipBar();
+  }
+
+  function sendSelectedToNest() {
+    if (selectedCellIndex < 0 || !S.cells[selectedCellIndex]) return;
+    var item = S.cells[selectedCellIndex];
+    if (!S.nest.a) {
+      S.nest.a = item;
+      S.cells[selectedCellIndex] = null;
+    } else if (!S.nest.b) {
+      if (S.nest.a.k !== item.k) {
+        showTip('すみかには同じ種類のスライムを入れてください！');
+        return;
+      }
+      S.nest.b = item;
+      S.cells[selectedCellIndex] = null;
+      S.nest.eggAt = Date.now() + 25000;
+    } else {
+      showTip('すみかはいっぱいです！');
+      return;
+    }
+    sfxPop();
+    selectedCellIndex = -1;
+    renderRanchGrid();
+    updateNestUI();
+    updateTipBar();
+  }
+
+  function createFloatText(cellIdx, text) {
+    var grid = document.getElementById('ranchGrid');
+    if (!grid) return;
+    var cells = grid.querySelectorAll('.sf-cell');
+    if (!cells[cellIdx]) return;
+
+    var rect = cells[cellIdx].getBoundingClientRect();
+    var gridRect = grid.getBoundingClientRect();
+
+    var div = document.createElement('div');
+    div.className = 'floating-text';
+    div.style.left = (rect.left - gridRect.left + rect.width / 2) + 'px';
+    div.style.top = (rect.top - gridRect.top + rect.height / 2) + 'px';
+    div.textContent = text;
+    grid.appendChild(div);
+    setTimeout(function() { if (div.parentNode) div.parentNode.removeChild(div); }, 900);
+  }
+
+  // --- HUD & DIALOGS ---
+  function showTip(msg) {
+    var tip = document.getElementById('tipText');
+    if (tip) tip.textContent = msg;
+  }
+
+  function showModal(title, bodyHtml) {
+    var modal = document.getElementById('commonModal');
+    var t = document.getElementById('modalTitle');
+    var b = document.getElementById('modalBody');
+    var a = document.getElementById('modalActions');
+    if (!modal || !t || !b || !a) return;
+    t.textContent = title;
+    b.innerHTML = bodyHtml;
+    a.innerHTML = `<button class="btn btn-primary" onclick="closeCommonModal()">OK</button>`;
+    modal.hidden = false;
+  }
+
+  window.closeCommonModal = function() {
+    var modal = document.getElementById('commonModal');
+    if (modal) modal.hidden = true;
+  };
+
+  function renderHud() {
+    var elCoins = document.getElementById('hudCoins');
+    var elCps = document.getElementById('hudCps');
+    var elNets = document.getElementById('hudNets');
+    var elMaxNets = document.getElementById('hudMaxNets');
+    var elBossLevel = document.getElementById('badgeBossLevel');
+
+    if (elCoins) elCoins.textContent = fmtBig(S.coins);
+    if (elCps) elCps.textContent = '+' + fmtBig(calcTotalCps(Date.now()));
+    var maxNets = S.fac.nethut ? 12 : 8;
+    if (elNets) elNets.textContent = S.nets;
+    if (elMaxNets) elMaxNets.textContent = '/' + maxNets;
+    if (elBossLevel) elBossLevel.textContent = 'B' + (S.bossCleared + 1);
+  }
+
+  // --- SAVE & STATE PERSISTENCE ---
+  var saveCooldown = 0;
+  async function saveState() {
+    S.lastTick = Date.now();
+    try {
+      if (window.notebookAppApi && typeof window.notebookAppApi.setAppState === 'function') {
+        await window.notebookAppApi.setAppState(S);
+      }
+    } catch(e) {}
+  }
+
+  async function loadState() {
+    try {
+      if (window.notebookAppApi && typeof window.notebookAppApi.getAppState === 'function') {
+        var loaded = await window.notebookAppApi.getAppState();
+        if (loaded && loaded.cells) {
+          S = loaded;
+          // Calculate offline gains
+          var elapsed = Math.max(0, Date.now() - (S.lastTick || Date.now()));
+          var cpsBase = calcTotalCps(0);
+          var offlineCoins = Math.min(8 * 3600, elapsed / 1000) * cpsBase * 0.5;
+          if (offlineCoins > 1) {
+            S.coins += offlineCoins;
+            S.lifetimeCoins += offlineCoins;
+            showModal('おかえりなさい！', `
+              <p>留守中の放置コインを獲得しました！</p>
+              <h3 style="color:var(--primary); font-size:1.4rem; margin:8px 0;">+${fmtBig(offlineCoins)} コイン</h3>
+              <p style="font-size:0.78rem; color:#868e96;">（放置時間: ${Math.round(elapsed / 60000)}分 / 効率50%）</p>
+            `);
+          }
+        }
+      }
+    } catch(e) {}
+  }
+
+  // --- SCENE SWITCHING ---
+  function switchScene(sceneName) {
+    initAudio();
+    sfxPop();
+    currentScene = sceneName;
+
+    document.querySelectorAll('.sf-scene-btn').forEach(function(b) {
+      var act = b.dataset.scene === sceneName;
+      b.classList.toggle('active', act);
+      b.setAttribute('aria-selected', act ? 'true' : 'false');
+    });
+
+    var rGrid = document.getElementById('ranchGrid');
+    var fView = document.getElementById('fieldView');
+    var bView = document.getElementById('battleView');
+    var tView = document.getElementById('tankenView');
+
+    if (rGrid) rGrid.style.display = sceneName === 'ranch' ? 'grid' : 'none';
+    if (fView) fView.style.display = sceneName === 'field' ? 'flex' : 'none';
+    if (bView) bView.style.display = sceneName === 'battle' ? 'flex' : 'none';
+    if (tView) tView.style.display = sceneName === 'tanken' ? 'flex' : 'none';
+
+    if (sceneName === 'field') spawnWildSlimes();
+    if (sceneName === 'battle') startBossBattle();
+    if (sceneName === 'tanken') updateTankenUI();
+  }
+
+  // --- MAIN LOOP (100ms) ---
+  var lastTickAt = Date.now();
+  var autoMergeTimer = 0;
+
+  function tick() {
+    var now = Date.now();
+    var dt = (now - lastTickAt) / 1000;
+    lastTickAt = now;
+    if (dt <= 0) return;
+
+    // Coins income
+    var currentCps = calcTotalCps(now);
+    S.coins += currentCps * dt;
+    S.lifetimeCoins += currentCps * dt;
+
+    // Net regen (every 30s or 15s with facility)
+    var maxNets = S.fac.nethut ? 12 : 8;
+    var netRegenSec = S.fac.nethut ? 15 : 30;
+    if (S.nets < maxNets && now - S.netAt >= netRegenSec * 1000) {
+      S.nets++;
+      S.netAt = now;
+    }
+
+    // Auto merge if facility active
+    if (S.fac.automerge && S.autoMergeOn) {
+      autoMergeTimer += dt;
+      if (autoMergeTimer >= 15) {
+        autoMergeTimer = 0;
+        var count = autoMergeAll();
+        if (count > 0) showTip('🤖 おまかせ進化で ' + count + '回 合体しました！');
+      }
+    }
+
+    // Battle ticking
+    if (currentScene === 'battle') tickBattle();
+
+    // Nest & Tanken ticking
+    updateNestUI();
+    if (currentScene === 'tanken') updateTankenUI();
+
+    // Render HUD
+    renderHud();
+
+    // Periodic state saving (every 10 seconds)
+    saveCooldown += dt;
+    if (saveCooldown >= 10) {
+      saveCooldown = 0;
+      saveState();
+    }
+  }
+
+  // --- INITIALIZATION ---
+  async function init() {
+    await loadState();
+
+    // News banner close
+    var newsClose = document.getElementById('sfNewsClose');
+    if (newsClose) {
+      newsClose.onclick = function() {
+        var news = document.getElementById('sfNews');
+        if (news) news.style.display = 'none';
+      };
+    }
+
+    // Sound toggle
+    var soundBtn = document.getElementById('hudSoundBtn');
+    if (soundBtn) {
+      soundBtn.onclick = function() {
+        isMuted = !isMuted;
+        var icon = document.getElementById('soundIcon');
+        if (icon) {
+          icon.setAttribute('data-lucide', isMuted ? 'volume-x' : 'volume-2');
+          lucide.createIcons();
+        }
+      };
+    }
+
+    // Scene tabs click
+    document.querySelectorAll('.sf-scene-btn').forEach(function(btn) {
+      btn.onclick = function() {
+        switchScene(btn.dataset.scene);
+      };
+    });
+
+    // Panel tabs click
+    document.querySelectorAll('.sf-tab-btn').forEach(function(btn) {
+      btn.onclick = function() {
+        initAudio();
+        sfxPop();
+        document.querySelectorAll('.sf-tab-btn').forEach(function(b) { b.classList.remove('active'); });
+        btn.classList.add('active');
+        currentTab = btn.dataset.tab;
+        renderPanelContent();
+      };
+    });
+
+    // Action buttons in tip bar
+    var btnPet = document.getElementById('btnPet');
+    var btnFeed = document.getElementById('btnFeed');
+    var btnSendG = document.getElementById('btnSendGousei');
+    var btnSendN = document.getElementById('btnSendNest');
+    if (btnPet) btnPet.onclick = petSelectedSlime;
+    if (btnFeed) btnFeed.onclick = feedSelectedSlime;
+    if (btnSendG) btnSendG.onclick = sendSelectedToGousei;
+    if (btnSendN) btnSendN.onclick = sendSelectedToNest;
+
+    // Stations
+    var btnDoG = document.getElementById('btnDoGousei');
+    var btnHatchN = document.getElementById('btnHatchNest');
+    if (btnDoG) btnDoG.onclick = doGousei;
+    if (btnHatchN) btnHatchN.onclick = hatchNest;
+
+    // Slots click to take back
+    var slotGA = document.getElementById('gouseiSlotA');
+    var slotGB = document.getElementById('gouseiSlotB');
+    if (slotGA) slotGA.onclick = function() {
+      if (S.gousei[0]) { addSlime(S.gousei[0].k, S.gousei[0].shiny); S.gousei[0] = null; updateGouseiUI(); }
+    };
+    if (slotGB) slotGB.onclick = function() {
+      if (S.gousei[1]) { addSlime(S.gousei[1].k, S.gousei[1].shiny); S.gousei[1] = null; updateGouseiUI(); }
+    };
+
+    var slotNA = document.getElementById('nestSlotA');
+    var slotNB = document.getElementById('nestSlotB');
+    if (slotNA) slotNA.onclick = function() {
+      if (S.nest.a) { addSlime(S.nest.a.k, S.nest.a.shiny); S.nest.a = null; S.nest.eggAt = 0; updateNestUI(); }
+    };
+    if (slotNB) slotNB.onclick = function() {
+      if (S.nest.b) { addSlime(S.nest.b.k, S.nest.b.shiny); S.nest.b = null; S.nest.eggAt = 0; updateNestUI(); }
+    };
+
+    // Battle Cheer
+    var cheer = document.getElementById('cheerBtn');
+    if (cheer) cheer.onclick = cheerTap;
+
+    // Catch Ring Tap
+    var catchTap = document.getElementById('catchTapBtn');
+    if (catchTap) catchTap.onclick = handleCatchTap;
+
+    // Field Chips setup
+    var fieldChips = document.getElementById('fieldSelector');
+    if (fieldChips) {
+      fieldChips.innerHTML = FIELDS.map(function(f, i) {
+        var locked = S.bossCleared < f.minBoss;
+        return `
+          <button class="sf-field-chip ${i === 0 ? 'active' : ''} ${locked ? 'locked' : ''}"
+                  data-fid="${f.id}" ${locked ? 'disabled' : ''}>
+            ${f.name} ${locked ? `(B${f.minBoss+1})` : ''}
+          </button>
+        `;
+      }).join('');
+
+      fieldChips.querySelectorAll('.sf-field-chip').forEach(function(chip) {
+        chip.onclick = function() {
+          var fid = parseInt(chip.dataset.fid, 10);
+          fieldChips.querySelectorAll('.sf-field-chip').forEach(function(c) { c.classList.remove('active'); });
+          chip.classList.add('active');
+          currentFieldId = fid;
+          spawnWildSlimes();
+        };
+      });
+    }
+
+    renderRanchGrid();
+    renderHud();
+    renderPanelContent();
+    updateGouseiUI();
+    updateNestUI();
+    lucide.createIcons();
+
+    // Start 100ms game loop
+    setInterval(tick, 100);
+  }
+
+  window.addEventListener('DOMContentLoaded', init);
+})();
+</script>
+</body>
+</html>
