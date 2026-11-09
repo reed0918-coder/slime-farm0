@@ -1,0 +1,2747 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="artifact-type" content="tool">
+  <meta name="design-style" content="sticker">
+  <title>スライム牧場 - 捕まえて合成・進化！ボスとバトルする放置ゲーム</title>
+  <style>
+    :root {
+      --bg-body: #fdf6e2;
+      --bg-frame: #ffffff;
+      --bg-canvas: #c9ec9f;
+      --bg-panel: #FFF3E0;
+      --bg-card: #FFFDF9;
+      --bg-tip: #FFFDF6;
+      --btn-orange: #E67E22;
+      --btn-orange-hover: #d35400;
+      --btn-green: #2E8B57;
+      --btn-green-hover: #236b43;
+      --color-hud-gold: #FFF3E0;
+      --color-hud-net: #EAF6EC;
+      --text-main: #333333;
+      --text-muted: #666666;
+      --text-brown: #8a4a12;
+      --text-accent: #B3560A;
+      --border-dash: #d9cdb8;
+      --border-light: #F0E6D2;
+      --color-shiny: #F2C12E;
+      --space-xs: 4px;
+      --space-sm: 8px;
+      --space-md: 12px;
+      --space-lg: 16px;
+      --space-xl: 20px;
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --radius-full: 9999px;
+      --shadow-sm: 0 2px 6px rgba(0, 0, 0, 0.08);
+      --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.12);
+      --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.25);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow-x: clip;
+      background: var(--bg-body);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Kaku Gothic ProN", "Meiryo", sans-serif;
+      color: var(--text-main);
+      line-height: 1.4;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    body {
+      padding: var(--space-sm);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+    }
+
+    .sf-app-container {
+      width: 100%;
+      max-width: 860px;
+      margin: 0 auto;
+    }
+
+    /* ページの上の おしらせ */
+    .sf-news {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: var(--space-sm);
+      padding: 0.4rem 0.6rem;
+      border: 2px solid #ffd93b;
+      border-radius: var(--radius-md);
+      background: linear-gradient(180deg, #fffaf0, #fff3cd);
+      font-size: 0.8rem;
+      color: #7b5800;
+    }
+    .sf-news[hidden] { display: none; }
+    .sf-news-badge {
+      flex: none;
+      padding: 2px 8px;
+      border-radius: var(--radius-full);
+      background: #e8930c;
+      color: #fff;
+      font-size: 0.7rem;
+      font-weight: 900;
+    }
+    .sf-news-text { flex: 1; min-width: 0; font-weight: 500; }
+    .sf-news-close {
+      flex: none;
+      width: 22px;
+      height: 22px;
+      border: none;
+      border-radius: var(--radius-full);
+      background: rgba(0, 0, 0, 0.08);
+      color: #7b5800;
+      font-size: 0.8rem;
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+    }
+
+    /* ゲームのメインフレーム */
+    .sf-frame {
+      background: var(--bg-frame);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-md);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    @media (min-width: 860px) {
+      .sf-frame {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 330px;
+        align-items: stretch;
+      }
+    }
+
+    .sf-left {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+
+    .sf-right {
+      display: flex;
+      flex-direction: column;
+      border-top: 2px solid var(--border-light);
+      background: var(--bg-panel);
+      min-height: 0;
+    }
+
+    @media (min-width: 860px) {
+      .sf-right {
+        border-top: none;
+        border-left: 2px solid var(--border-light);
+      }
+    }
+
+    /* HUD */
+    .sf-hud {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 6px;
+      padding: var(--space-sm) var(--space-sm) 6px;
+      background: var(--bg-frame);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .sf-stat {
+      background: var(--color-hud-gold);
+      border-radius: var(--radius-md);
+      padding: 6px 10px;
+      min-width: 0;
+      box-shadow: inset 0 0 0 1px rgba(186, 126, 46, 0.12);
+    }
+
+    .sf-stat small {
+      display: block;
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--text-brown);
+      letter-spacing: 0.04em;
+    }
+
+    .sf-stat b {
+      display: block;
+      font-size: 16px;
+      font-weight: 900;
+      color: #2b1807;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .sf-stat-net {
+      background: var(--color-hud-net);
+      box-shadow: inset 0 0 0 1px rgba(31, 74, 50, 0.15);
+    }
+    .sf-stat-net small {
+      color: #1F4A32;
+    }
+
+    .sf-unit {
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--text-muted);
+      margin-left: 2px;
+    }
+
+    /* 場面切り替えタブ */
+    .sf-scene-tabs {
+      display: flex;
+      gap: 6px;
+      padding: 2px var(--space-sm) 6px;
+      background: var(--bg-frame);
+    }
+
+    .sf-scene-tab {
+      flex: 1;
+      padding: 8px 0;
+      font-size: 13px;
+      font-weight: 700;
+      border-radius: var(--radius-full);
+      background: #F3EFE8;
+      color: #666;
+      border: none;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+      position: relative;
+    }
+
+    .sf-scene-tab.on {
+      background: var(--btn-orange);
+      color: #ffffff;
+      box-shadow: 0 2px 6px rgba(230, 126, 34, 0.35);
+    }
+
+    .sf-scene-tab .sf-badge {
+      position: absolute;
+      top: -3px;
+      right: 2px;
+      min-width: 16px;
+      height: 16px;
+      padding: 0 4px;
+      border-radius: var(--radius-full);
+      background: #D6412A;
+      color: #fff;
+      font-size: 10px;
+      line-height: 16px;
+      font-weight: 900;
+      display: none;
+    }
+    .sf-scene-tab .sf-badge.show { display: inline-block; }
+
+    /* Canvas ステージ */
+    .sf-stage {
+      position: relative;
+      background: var(--bg-canvas);
+      width: 100%;
+      line-height: 0;
+      overflow: hidden;
+    }
+
+    #sf-canvas {
+      display: block;
+      width: 100%;
+      height: auto;
+      aspect-ratio: 400 / 330;
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    /* ひとことメッセージバー */
+    .sf-tip {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 44px;
+      margin: 8px var(--space-sm) 0;
+      padding: 6px 12px;
+      border-radius: var(--radius-md);
+      background: var(--bg-tip);
+      border: 1px solid var(--border-light);
+      font-size: 12px;
+      line-height: 1.4;
+      color: #444;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .sf-tip b {
+      color: var(--text-accent);
+    }
+
+    .sf-tip-text {
+      flex: 1;
+      min-width: 0;
+      word-break: break-all;
+    }
+
+    .sf-tip-actions {
+      display: flex;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+
+    /* ごうせい台・すみか・操作カード群 */
+    .sf-stations {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      padding: 8px var(--space-sm) 10px;
+      min-height: 98px;
+      background: var(--bg-frame);
+    }
+
+    .sf-card {
+      border: 2px dashed var(--border-dash);
+      border-radius: var(--radius-md);
+      padding: 8px 10px;
+      background: var(--bg-card);
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .sf-card.wide {
+      grid-column: 1 / -1;
+    }
+
+    .sf-card h4 {
+      margin: 0 0 6px;
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--text-brown);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .sf-card h4 span.sub {
+      font-size: 10px;
+      font-weight: 500;
+      color: var(--text-muted);
+    }
+
+    .sf-card p {
+      margin: 0 0 6px;
+      font-size: 11px;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+
+    .sf-slots {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .sf-slot-btn {
+      width: 48px;
+      height: 48px;
+      flex-shrink: 0;
+      border-radius: var(--radius-md);
+      background: #F3EFE8;
+      border: 2px solid transparent;
+      display: grid;
+      place-items: center;
+      position: relative;
+      cursor: pointer;
+      padding: 0;
+      transition: transform 0.1s, border-color 0.15s;
+    }
+    .sf-slot-btn:active {
+      transform: scale(0.96);
+    }
+    .sf-slot-btn.has-slime {
+      background: #FFF3E0;
+      border-color: #E67E22;
+    }
+    .sf-slot-empty {
+      color: #aaa;
+      font-size: 22px;
+      font-weight: 700;
+    }
+
+    .sf-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 6px 14px;
+      font-size: 12px;
+      font-weight: 800;
+      border-radius: var(--radius-full);
+      background: var(--btn-orange);
+      color: #fff;
+      border: none;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.15s, transform 0.1s;
+      font-variant-numeric: tabular-nums;
+    }
+    .sf-btn:hover:not(:disabled) {
+      background: var(--btn-orange-hover);
+    }
+    .sf-btn:active:not(:disabled) {
+      transform: scale(0.97);
+    }
+    .sf-btn:disabled, .sf-btn.lock {
+      background: #EDE7DC;
+      color: #999;
+      cursor: default;
+      box-shadow: none;
+      transform: none;
+    }
+    .sf-btn.green {
+      background: var(--btn-green);
+    }
+    .sf-btn.green:hover:not(:disabled) {
+      background: var(--btn-green-hover);
+    }
+
+    /* エサボタン列 */
+    .sf-foods {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      padding: 0 var(--space-sm) 6px;
+    }
+    .sf-food-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 8px;
+      border-radius: var(--radius-full);
+      background: #FFF3E0;
+      border: 1px solid #F0E0C0;
+      color: var(--text-brown);
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .sf-food-btn:active {
+      transform: scale(0.96);
+    }
+    .sf-food-btn .sf-badge-count {
+      background: var(--btn-orange);
+      color: #fff;
+      border-radius: var(--radius-full);
+      padding: 0 5px;
+      font-size: 10px;
+    }
+
+    /* 右（スマホでは下）のパネルタブ */
+    .sf-panel-tabs {
+      display: flex;
+      gap: 4px;
+      padding: 8px var(--space-sm) 0;
+      border-top: 1px solid var(--border-light);
+    }
+
+    .sf-panel-tab {
+      flex: 1;
+      padding: 7px 0;
+      font-size: 12px;
+      font-weight: 700;
+      background: transparent;
+      color: #777;
+      border: none;
+      border-radius: var(--radius-md) var(--radius-md) 0 0;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .sf-panel-tab.on {
+      background: var(--bg-panel);
+      color: var(--text-accent);
+    }
+
+    .sf-panel-content {
+      height: 280px;
+      overflow-y: auto;
+      padding: 10px;
+      background: var(--bg-panel);
+      font-size: 12px;
+    }
+
+    @media (min-width: 860px) {
+      .sf-panel-content {
+        flex: 1 1 0;
+        height: 0;
+        min-height: 0;
+      }
+    }
+
+    /* パネル内コンポーネント */
+    .sf-shop-list {
+      display: grid;
+      gap: 8px;
+    }
+
+    .sf-shop-row {
+      display: grid;
+      grid-template-columns: 40px minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 8px;
+      background: #ffffff;
+      border-radius: var(--radius-md);
+      padding: 8px 10px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .sf-shop-icon {
+      width: 40px;
+      height: 40px;
+      display: grid;
+      place-items: center;
+      border-radius: var(--radius-sm);
+      background: #FAF7F0;
+    }
+
+    .sf-shop-title {
+      font-weight: 800;
+      font-size: 12px;
+      color: #2b1807;
+      line-height: 1.3;
+    }
+    .sf-shop-desc {
+      font-weight: 500;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    /* 図鑑グリッド */
+    .sf-dex-summary {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 8px;
+      font-weight: 900;
+      color: var(--text-accent);
+    }
+
+    .sf-dex-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+    }
+
+    .sf-dex-card {
+      background: #fff;
+      border-radius: var(--radius-md);
+      padding: 6px 4px;
+      text-align: center;
+      box-shadow: var(--shadow-sm);
+      border: 1px solid transparent;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      transition: transform 0.1s;
+    }
+    .sf-dex-card:active {
+      transform: scale(0.96);
+    }
+    .sf-dex-card.unknown {
+      background: #f7f2eb;
+      color: #999;
+      opacity: 0.7;
+    }
+    .sf-dex-card-canvas {
+      width: 44px;
+      height: 44px;
+      display: block;
+      margin-bottom: 2px;
+    }
+    .sf-dex-card-name {
+      font-size: 10px;
+      font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      width: 100%;
+    }
+
+    /* モーダルダイアログ */
+    .sf-modal-overlay {
+      position: absolute;
+      inset: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      background: rgba(40, 30, 20, 0.55);
+      backdrop-filter: blur(2px);
+      border-radius: var(--radius-lg);
+    }
+    .sf-modal-overlay[hidden] { display: none !important; }
+
+    .sf-modal-box {
+      width: 100%;
+      max-width: 340px;
+      max-height: 90%;
+      overflow-y: auto;
+      background: #ffffff;
+      border-radius: var(--radius-lg);
+      padding: 20px 16px;
+      text-align: center;
+      box-shadow: var(--shadow-lg);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .sf-modal-box h3 {
+      margin: 0 0 10px;
+      font-size: 17px;
+      font-weight: 900;
+      color: var(--btn-orange);
+    }
+
+    .sf-modal-choice-row {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      margin: 14px 0 8px;
+    }
+
+    .sf-modal-choice-btn {
+      flex: 1;
+      padding: 12px 6px;
+      border-radius: var(--radius-md);
+      background: #FFF3E0;
+      border: 2px solid #F0D5B0;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+    .sf-modal-choice-btn:active {
+      transform: scale(0.97);
+    }
+    .sf-modal-choice-btn b {
+      font-size: 12px;
+      color: #2b1807;
+    }
+
+    /* 下部解説・ガイドセクション */
+    .sf-guide {
+      width: 100%;
+      max-width: 860px;
+      margin-top: var(--space-lg);
+      background: #fff;
+      border-radius: var(--radius-lg);
+      padding: var(--space-md) var(--space-lg);
+      box-shadow: var(--shadow-sm);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+    .sf-guide h3 {
+      font-size: 15px;
+      color: var(--btn-orange);
+      margin: var(--space-sm) 0 6px;
+    }
+    .sf-guide ul {
+      padding-left: 20px;
+      margin-bottom: var(--space-md);
+    }
+    .sf-guide li {
+      margin-bottom: 4px;
+    }
+    .sf-guide table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 8px 0 var(--space-md);
+      font-size: 12px;
+    }
+    .sf-guide th, .sf-guide td {
+      border: 1px solid #eee2cf;
+      padding: 6px 8px;
+      text-align: left;
+    }
+    .sf-guide th {
+      background: #FFF3E0;
+      color: var(--text-brown);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      * {
+        animation: none !important;
+        transition: none !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="sf-app-container">
+    <!-- お知らせバナー -->
+    <div class="sf-news" id="sf-news">
+      <span class="sf-news-badge">おしらせ</span>
+      <span class="sf-news-text">スライム牧場へようこそ！タマゴを買って、同じスライムを重ねて進化させよう！</span>
+      <button class="sf-news-close" id="sf-news-close" type="button" aria-label="閉じる">✕</button>
+    </div>
+
+    <!-- ゲーム本体フレーム -->
+    <div class="sf-frame">
+      <!-- 左ペイン（HUD、シーンタブ、キャンバス、ひとこと、ステーション） -->
+      <div class="sf-left">
+        <!-- HUD -->
+        <div class="sf-hud">
+          <div class="sf-stat">
+            <small>コイン</small>
+            <b id="sf-coins">40</b>
+          </div>
+          <div class="sf-stat">
+            <small>しゅうにゅう</small>
+            <b><span id="sf-cps">2</span><span class="sf-unit">/秒</span></b>
+          </div>
+          <div class="sf-stat sf-stat-net">
+            <small>あみ</small>
+            <b><span id="sf-nets">8</span><span class="sf-unit">/8</span></b>
+          </div>
+        </div>
+
+        <!-- 場面切り替えタブ -->
+        <div class="sf-scene-tabs" role="tablist">
+          <button type="button" class="sf-scene-tab on" data-scene="ranch" role="tab" aria-selected="true">ぼくじょう</button>
+          <button type="button" class="sf-scene-tab" data-scene="field" role="tab" aria-selected="false">のはら</button>
+          <button type="button" class="sf-scene-tab" data-scene="battle" role="tab" aria-selected="false">
+            とうばつ <span class="sf-badge" id="sf-badge-boss">!</span>
+          </button>
+          <button type="button" class="sf-scene-tab" data-scene="tanken" role="tab" aria-selected="false">
+            たんけん <span class="sf-badge" id="sf-badge-tk">済</span>
+          </button>
+        </div>
+
+        <!-- メインCanvas -->
+        <div class="sf-stage" id="sf-stage">
+          <canvas id="sf-canvas" width="400" height="330"></canvas>
+        </div>
+
+        <!-- ひとことバー ＆ アクションボタン -->
+        <div class="sf-tip">
+          <div class="sf-tip-text" id="sf-tip-text">スライムをタップして選択・ドラッグで重ねて進化！</div>
+          <div class="sf-tip-actions">
+            <button type="button" class="sf-btn green" id="sf-btn-pet" style="display:none;">なでる</button>
+          </div>
+        </div>
+
+        <!-- エサボタングループ（ぼくじょう時のみ表示） -->
+        <div class="sf-foods" id="sf-foods"></div>
+
+        <!-- 下部操作ステーション（ごうせい台・すみか・バトル情報など） -->
+        <div class="sf-stations" id="sf-stations"></div>
+      </div>
+
+      <!-- 右ペイン（PC時は右側、スマホ時は下部のタブパネル） -->
+      <div class="sf-right">
+        <div class="sf-panel-tabs" role="tablist">
+          <button type="button" class="sf-panel-tab on" data-panel="egg" role="tab" aria-selected="true">タマゴ</button>
+          <button type="button" class="sf-panel-tab" data-panel="fac" role="tab" aria-selected="false">しせつ</button>
+          <button type="button" class="sf-panel-tab" data-panel="dex" role="tab" aria-selected="false">ずかん</button>
+          <button type="button" class="sf-panel-tab" data-panel="tree" role="tab" aria-selected="false">けいとうず</button>
+          <button type="button" class="sf-panel-tab" data-panel="rebirth" role="tab" aria-selected="false">にじ</button>
+        </div>
+        <div class="sf-panel-content" id="sf-panel-content"></div>
+      </div>
+    </div>
+
+    <!-- モーダルダイアログ -->
+    <div class="sf-modal-overlay" id="sf-modal" hidden>
+      <div class="sf-modal-box" id="sf-modal-box"></div>
+    </div>
+
+    <!-- ガイド・遊び方解説 -->
+    <div class="sf-guide">
+      <h3>スライム牧場の遊び方</h3>
+      <ul>
+        <li><strong>ふやす</strong>: 「タマゴ」タブでタマゴを購入するか、「のはら」であみを使って野生スライムを捕獲します。</li>
+        <li><strong>進化</strong>: 牧場で同じ種類のスライムをドラッグして重ねる（またはタップで選んで相手をタップ）と、1段階上の強力なスライムに進化します。</li>
+        <li><strong>枝分かれ進化</strong>: 3段階目（つぼみ・なみ・マグマ）は、与えたエサによって4段階目の姿が変化します。エサを与えていない場合は進化時に選択できます。</li>
+        <li><strong>ごうせい台</strong>: 違う系統のスライムを2匹セットして合成！新しい珍しいスライムを発見できます。合わなくても2匹とも無事に戻ります。</li>
+        <li><strong>とうばつバトル</strong>: 牧場の強さ上位3匹がボスに挑みます。「ほのお ＞ くさ ＞ みず ＞ ほのお」の3すくみ相性で攻撃力が1.5倍に！往復するきあいゲージの緑の枠でタップすると「かいしんのいちげき」が発動します。</li>
+        <li><strong>自動セーブ＆放置収益</strong>: ゲームは全自動で常時保存されます。ページを閉じている間も最大8時間・50%効率でコインとあみが自動的に貯まります。</li>
+      </ul>
+
+      <h3>進化系統と属性の3すくみ</h3>
+      <table>
+        <thead>
+          <tr><th>属性</th><th>1段階目</th><th>2段階目</th><th>3段階目</th><th>4段階目（枝分かれ）</th></tr>
+        </thead>
+        <tbody>
+          <tr><th>くさ (有利: みず)</th><td>みどり</td><td>はっぱ</td><td>つぼみ</td><td>はな / きのこ</td></tr>
+          <tr><th>みず (有利: ほのお)</th><td>あお</td><td>あわ</td><td>なみ</td><td>うみ / こおり</td></tr>
+          <tr><th>ほのお (有利: くさ)</th><td>あか</td><td>ほのお</td><td>マグマ</td><td>たいよう / かみなり</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <api-shim></api-shim>
+  <script>
+  (function () {
+    'use strict';
+
+    // ==========================================
+    // 1. 定数・マスターデータ（SPECIES / RECIPES / FOODS）
+    // ==========================================
+    var SAVE_KEY = 'sf_auto_save_v2';
+    var OFFLINE_CAP_MS = 8 * 60 * 60 * 1000;
+    var OFFLINE_RATE = 0.5;
+    var RING_LAP_MS = 1200;
+    var BATTLE_MS = 10000;
+    var SWEEP_MS = 1400;
+    var CRIT_HALF = 0.08;
+    var SHINY_INCOME = 3;
+    var SHINY_POWER = 1.5;
+
+    // お世話状態の定義
+    var CARE_STEPS = [0, 3 * 3600000, 10 * 3600000, 48 * 3600000];
+    var CARE_NAME = ['ごきげん', 'ふつう', 'しょんぼり', 'やさぐれ'];
+    var CARE_MULT = [1, 0.8, 0.5, 0.25];
+    var CARE_MARK = ['', '💤', '💧', '💢'];
+
+    // エサマスター
+    var FOODS = [
+      { id: 'nectar',   name: 'はなのみつ', icon: '🍯', target: 'bud',   branch: 0, desc: 'つぼみ→はな' },
+      { id: 'mushroom', name: 'きのこ',     icon: '🍄', target: 'bud',   branch: 1, desc: 'つぼみ→きのこ' },
+      { id: 'spring',   name: 'わきみず',   icon: '💧', target: 'wave',  branch: 0, desc: 'なみ→うみ' },
+      { id: 'iceberry', name: 'こおりのみ', icon: '🧊', target: 'wave',  branch: 1, desc: 'なみ→こおり' },
+      { id: 'light',    name: 'ひかりのつぶ', icon: '✨', target: 'magma', branch: 0, desc: 'マグマ→たいよう' },
+      { id: 'thunder',  name: 'でんきのみ', icon: '⚡', target: 'magma', branch: 1, desc: 'マグマ→かみなり' }
+    ];
+
+    // スライムマスター表（SPECIES）
+    var SPECIES = {
+      // くさ系統
+      green: {
+        line: 'grass', stage: 1, income: 1, power: 10,
+        colorTop: '#a5d6a7', colorBase: '#388e3c', colorShadow: '#1b5e20',
+        evolve: 'leaf', name: 'みどりスライム', desc: '牧場の基本となる緑色のスライム。'
+      },
+      leaf: {
+        line: 'grass', stage: 2, income: 3, power: 25,
+        colorTop: '#81c784', colorBase: '#2e7d32', colorShadow: '#1b5e20',
+        evolve: 'bud', name: 'はっぱスライム', desc: 'あたまに元気な若葉が生えている。'
+      },
+      bud: {
+        line: 'grass', stage: 3, income: 9, power: 65,
+        colorTop: '#66bb6a', colorBase: '#1b5e20', colorShadow: '#0d3810',
+        evolve: [{ to: 'flower', food: 'はなのみつ' }, { to: 'kinoko', food: 'きのこ' }],
+        name: 'つぼみスライム', desc: '花開く準備をしている蕾をのせたスライム。'
+      },
+      flower: {
+        line: 'grass', stage: 4, income: 28, power: 160,
+        colorTop: '#f48fb1', colorBase: '#c2185b', colorShadow: '#880e4f',
+        evolve: null, name: 'はなスライム', desc: '頭上で綺麗な花を満開に咲かせたスライム。'
+      },
+      kinoko: {
+        line: 'grass', stage: 4, income: 28, power: 160,
+        colorTop: '#ffab91', colorBase: '#d84315', colorShadow: '#bf360c',
+        evolve: null, name: 'きのこスライム', desc: '森のキノコと仲良くなった変わり者。'
+      },
+
+      // みず系統
+      blue: {
+        line: 'water', stage: 1, income: 2, power: 15,
+        colorTop: '#90caf9', colorBase: '#1976d2', colorShadow: '#0d47a1',
+        evolve: 'bubble', name: 'あおスライム', desc: '澄んだ水滴のような透明感のあるスライム。'
+      },
+      bubble: {
+        line: 'water', stage: 2, income: 6, power: 42,
+        colorTop: '#80deea', colorBase: '#0097a7', colorShadow: '#006064',
+        evolve: 'wave', name: 'あわスライム', desc: '体からぷくぷくと小さな泡が湧き出す。'
+      },
+      wave: {
+        line: 'water', stage: 3, income: 18, power: 105,
+        colorTop: '#4fc3f7', colorBase: '#0288d1', colorShadow: '#01579b',
+        evolve: [{ to: 'sea', food: 'わきみず' }, { to: 'ice', food: 'こおりのみ' }],
+        name: 'なみスライム', desc: '押し寄せるさざ波のような流動感を持つ。'
+      },
+      sea: {
+        line: 'water', stage: 4, income: 55, power: 250,
+        colorTop: '#29b6f6', colorBase: '#0277bd', colorShadow: '#002f6c',
+        evolve: null, name: 'うみスライム', desc: '広大な大海原の力を秘めた深青スライム。'
+      },
+      ice: {
+        line: 'water', stage: 4, income: 55, power: 250,
+        colorTop: '#e0f7fa', colorBase: '#80deea', colorShadow: '#00838f',
+        evolve: null, name: 'こおりスライム', desc: '冷気でカチコチに凍りついた氷結晶スライム。'
+      },
+
+      // ほのお系統
+      red: {
+        line: 'fire', stage: 1, income: 4, power: 26,
+        colorTop: '#ef9a9a', colorBase: '#d32f2f', colorShadow: '#b71c1c',
+        evolve: 'flame', name: 'あかスライム', desc: 'ぽかぽか温かい火の粉を含んだスライム。'
+      },
+      flame: {
+        line: 'fire', stage: 2, income: 12, power: 70,
+        colorTop: '#ffab91', colorBase: '#e64a19', colorShadow: '#bf360c',
+        evolve: 'magma', name: 'ほのおスライム', desc: '頭のてっぺんから小さな炎がゆらめく。'
+      },
+      magma: {
+        line: 'fire', stage: 3, income: 38, power: 170,
+        colorTop: '#ff7043', colorBase: '#c62828', colorShadow: '#4a120e',
+        evolve: [{ to: 'sun', food: 'ひかりのつぶ' }, { to: 'kami', food: 'でんきのみ' }],
+        name: 'マグマスライム', desc: '溶岩の甲羅をまとい高熱を帯びたスライム。'
+      },
+      sun: {
+        line: 'fire', stage: 4, income: 110, power: 400,
+        colorTop: '#fff59d', colorBase: '#fbc02d', colorShadow: '#f57f17',
+        evolve: null, name: 'たいようスライム', desc: '太陽の輝きを放ち周囲を明るく照らす。'
+      },
+      kami: {
+        line: 'fire', stage: 4, income: 110, power: 400,
+        colorTop: '#fff176', colorBase: '#fbc02d', colorShadow: '#e65100',
+        evolve: null, name: 'かみなりスライム', desc: '稲妻をまとってバチバチ放電するスライム。'
+      },
+
+      // 合成・特別スライム
+      ajisai: {
+        line: 'grass', stage: 3, income: 35, power: 110,
+        colorTop: '#ce93d8', colorBase: '#7b1fa2', colorShadow: '#4a148c',
+        recipe: ['leaf', 'bubble'], name: 'あじさいスライム', desc: '雨の日に紫色の花を咲かせる風情あるスライム。'
+      },
+      steam: {
+        line: 'water', stage: 3, income: 48, power: 140,
+        colorTop: '#eceff1', colorBase: '#90a4ae', colorShadow: '#455a64',
+        recipe: ['bubble', 'flame'], name: 'ゆげスライム', desc: '水と火が出会ってふわふわの湯気をまとう。'
+      },
+      taki: {
+        line: 'fire', stage: 3, income: 45, power: 135,
+        colorTop: '#ffcc80', colorBase: '#ef6c00', colorShadow: '#b23c00',
+        recipe: ['leaf', 'flame'], name: 'たきびスライム', desc: '薪の香りと温かい火を灯す癒しのスライム。'
+      },
+      rainbow: {
+        line: 'grass', stage: 5, income: 300, power: 950,
+        colorTop: '#ff80ab', colorBase: '#b388ff', colorShadow: '#80d8ff',
+        recipe: ['flower', 'sea'], name: 'にじスライム', desc: 'すべての系統の美しさを宿した伝説のスライム。'
+      },
+      king: {
+        line: 'fire', stage: 4, income: 180, power: 550,
+        colorTop: '#ffe082', colorBase: '#ffa000', colorShadow: '#ff6f00',
+        name: 'おやぶんスライム', desc: '突然変異でのみ誕生する堂々たる王者スライム。'
+      }
+    };
+
+    // レシピ逆引きキー生成
+    function recipeKey(a, b) {
+      return a < b ? a + '+' + b : b + '+' + a;
+    }
+    var RECIPES = {};
+    Object.keys(SPECIES).forEach(function (key) {
+      var r = SPECIES[key].recipe;
+      if (r) RECIPES[recipeKey(r[0], r[1])] = key;
+    });
+
+    // 属性相性（3すくみ）: ほのお ＞ くさ ＞ みず ＞ ほのお
+    var BEATS = { fire: 'grass', grass: 'water', water: 'fire' };
+    function typeMult(att, def) {
+      if (att === 'none' || def === 'none') return 1;
+      if (BEATS[att] === def) return 1.5;
+      if (BEATS[def] === att) return 0.67;
+      return 1;
+    }
+
+    // ==========================================
+    // 2. スライム文字列パース ＆ ロジック
+    // ==========================================
+    function now() { return Date.now(); }
+
+    var SLIME_RE = /^([a-z]+)(!?)(?:\^(\d))?(?:@(\d+))?$/;
+    function parseSlime(s) {
+      if (!s || typeof s !== 'string') return null;
+      var m = SLIME_RE.exec(s);
+      if (!m || !SPECIES[m[1]]) return null;
+      return {
+        k: m[1],
+        shiny: m[2] === '!',
+        mark: m[3] ? +m[3] : -1,
+        care: m[4] ? +m[4] * 60000 : 0
+      };
+    }
+    function slimeStr(k, shiny, mark, careAt) {
+      return k + (shiny ? '!' : '') + (mark >= 0 ? '^' + mark : '') + (careAt > 0 ? '@' + Math.floor(careAt / 60000) : '');
+    }
+    function reSlime(str, mark, careAt) {
+      var s = parseSlime(str);
+      if (!s) return str;
+      return slimeStr(s.k, s.shiny, mark != null ? mark : s.mark, careAt != null ? careAt : s.care);
+    }
+
+    function moodLevel(careAt, t) {
+      var d = t - (careAt || 0);
+      for (var i = CARE_STEPS.length - 1; i > 0; i--) {
+        if (d >= CARE_STEPS[i]) return i;
+      }
+      return 0;
+    }
+    function moodMult(careAt, t) {
+      return CARE_MULT[moodLevel(careAt, t)];
+    }
+
+    function incomeOf(k, shiny) {
+      return SPECIES[k].income * (shiny ? SHINY_INCOME : 1);
+    }
+    function powerOf(k, shiny, shards) {
+      return SPECIES[k].power * (shiny ? SHINY_POWER : 1) * (1 + 0.1 * (shards || 0));
+    }
+
+    function calcCps(cells, shards, t) {
+      var base = 0;
+      for (var i = 0; i < cells.length; i++) {
+        var s = parseSlime(cells[i]);
+        if (s) {
+          base += incomeOf(s.k, s.shiny) * (t ? moodMult(s.care, t) : 1);
+        }
+      }
+      return Math.round(base * (1 + 0.1 * (shards || 0)));
+    }
+
+    function evolveOptions(k) {
+      var e = SPECIES[k].evolve;
+      if (!e) return [];
+      if (typeof e === 'string') return [e];
+      return e.map(function (b) { return b.to; });
+    }
+
+    function offlineGain(elapsedMs, cps) {
+      if (!(elapsedMs > 0) || !(cps > 0)) return 0;
+      return Math.floor(Math.min(elapsedMs, OFFLINE_CAP_MS) / 1000 * cps * OFFLINE_RATE);
+    }
+
+    function catchZone(stage, shiny) {
+      var base = [0, 0.48, 0.30, 0.18, 0.12, 0.09][Math.min(stage, 5)];
+      return shiny ? base / 2 : base;
+    }
+    function catchLapMs(stage) {
+      return Math.round(RING_LAP_MS * (1 - 0.08 * (Math.min(stage, 5) - 1)));
+    }
+    function catchHit(elapsedMs, zoneStart, zone, lapMs) {
+      var f = (elapsedMs / (lapMs || RING_LAP_MS)) % 1;
+      var d = (f - zoneStart + 1) % 1;
+      return d <= zone;
+    }
+
+    function gaugePos(el) {
+      var ph = (el % SWEEP_MS) / SWEEP_MS;
+      return ph < 0.5 ? ph * 2 : (1 - ph) * 2;
+    }
+
+    function fmtBig(n) {
+      n = Math.floor(n || 0);
+      if (n < 1e4) return n.toLocaleString();
+      var units = [[1e12, '兆'], [1e8, '億'], [1e4, '万']];
+      for (var i = 0; i < units.length; i++) {
+        if (n >= units[i][0]) return (n / units[i][0]).toFixed(2) + units[i][1];
+      }
+      return String(n);
+    }
+
+    // ==========================================
+    // 3. ゲーム状態（State）
+    // ==========================================
+    var S = {
+      coins: 40,
+      cells: [
+        slimeStr('green', false, -1, now()),
+        slimeStr('green', false, -1, now()),
+        '', '', '', '', '', '', ''
+      ],
+      gousei: ['', ''],
+      bought: { green: 0, blue: 0, red: 0 },
+      nets: 8,
+      netAt: now(),
+      shards: 0,
+      bossCleared: 0,
+      bossWaitingUntil: 0,
+      dex: { green: true },
+      recipesFound: {},
+      foods: { nectar: 2, mushroom: 1, spring: 1, iceberry: 0, light: 0, thunder: 0 },
+      fac: { netHut: 0, autoMerge: 0 },
+      autoMergeOn: true,
+      lastTick: now(),
+      tankenEnd: 0,
+      tankenDest: null
+    };
+
+    var currentScene = 'ranch';
+    var currentPanel = 'egg';
+    var selectedIdx = -1;
+    var draggingIdx = -1;
+    var dragPoint = { x: 0, y: 0 };
+    var wildSlimes = [];
+    var catching = null;
+    var battle = null;
+    var floats = [];
+    var dirtyUI = true;
+
+    function addFloat(x, y, text, color) {
+      floats.push({ x: x, y: y, text: text, color: color || '#E67E22', t0: now() });
+    }
+
+    function markDirty() {
+      dirtyUI = true;
+    }
+
+    function unlockDex(k) {
+      if (k && SPECIES[k] && !S.dex[k]) {
+        S.dex[k] = true;
+        addFloat(200, 40, '🎉 新種ずかん登録！', '#E67E22');
+        markDirty();
+      }
+    }
+
+    function addSlimeToRanch(str) {
+      var idx = S.cells.indexOf('');
+      if (idx < 0) return false;
+      S.cells[idx] = str;
+      var parsed = parseSlime(str);
+      if (parsed) unlockDex(parsed.k);
+      markDirty();
+      return true;
+    }
+
+    function regenNets(t) {
+      var max = 8 + (S.fac.netHut || 0) * 2;
+      var iv = Math.max(12000, 30000 - (S.fac.netHut || 0) * 4000);
+      while (S.nets < max && t - S.netAt >= iv) {
+        S.nets++;
+        S.netAt += iv;
+        markDirty();
+      }
+      if (S.nets >= max) S.netAt = t;
+    }
+
+    function spawnWild() {
+      var pool = ['green', 'leaf', 'blue', 'bubble', 'red'];
+      if (S.bossCleared >= 10) pool.push('wave', 'flame');
+      if (S.bossCleared >= 20) pool.push('bud', 'magma');
+
+      while (wildSlimes.length < 3) {
+        var k = pool[Math.floor(Math.random() * pool.length)];
+        var shiny = Math.random() < 0.06;
+        wildSlimes.push({
+          k: k,
+          shiny: shiny,
+          x: 65 + Math.random() * 270,
+          y: 60 + Math.random() * 180,
+          phase: Math.random() * Math.PI * 2
+        });
+      }
+    }
+
+    function eggPrice(key) {
+      var n = S.bought[key] || 0;
+      var base = SPECIES[key].income * 20;
+      return Math.ceil(base * Math.pow(1.06, n));
+    }
+
+    // ボスデータ
+    function currentBoss() {
+      var lv = S.bossCleared + 1;
+      var cycle = (lv - 1) % 3;
+      var line = cycle === 0 ? 'water' : (cycle === 1 ? 'grass' : 'fire');
+      var bossNames = {
+        water: ['キングみずスライム', 'アクアタイタン', 'ディープリヴァイアサン', '海王クラーケン'],
+        grass: ['フォレストゴーレム', 'エンシェントトレント', 'ガイアベヒモス', '大樹の精霊王'],
+        fire: ['マグマドラゴン', 'フレイムフェニックス', 'イフリートジェネラル', '灼熱の獄炎竜']
+      };
+      var nameIndex = Math.min(Math.floor((lv - 1) / 3), 3);
+      var name = bossNames[line][nameIndex] + ' (Lv.' + lv + ')';
+      var hp = Math.round(45 * Math.pow(1.32, lv - 1));
+      var power = Math.round(hp * 0.95);
+      return { lv: lv, line: line, name: name, hp: hp, power: power };
+    }
+
+    function pickTopParty(bossLine) {
+      var list = [];
+      S.cells.forEach(function (str, idx) {
+        var s = parseSlime(str);
+        if (s) {
+          var mood = moodMult(s.care, now());
+          var tMult = typeMult(SPECIES[s.k].line, bossLine);
+          var eff = powerOf(s.k, s.shiny, S.shards) * mood * tMult;
+          list.push({ k: s.k, shiny: s.shiny, mood: mood, eff: eff, idx: idx });
+        }
+      });
+      list.sort(function (a, b) { return b.eff - a.eff; });
+      return list.slice(0, 3);
+    }
+
+    function teamTotalPower(party, bossLine) {
+      var sum = 0;
+      party.forEach(function (m) {
+        var tMult = typeMult(SPECIES[m.k].line, bossLine);
+        sum += powerOf(m.k, m.shiny, S.shards) * (m.mood || 1) * tMult;
+      });
+      return Math.round(sum);
+    }
+
+    // ==========================================
+    // 4. 進化・合成・バトル処理
+    // ==========================================
+    function finishMerge(fromIdx, toIdx, nextKey, wasShiny) {
+      var isShiny = wasShiny || (Math.random() < 0.05);
+      // まれにおやぶんスライムに変異
+      if (SPECIES[nextKey].stage >= 3 && Math.random() < 0.04) {
+        nextKey = 'king';
+      }
+      S.cells[toIdx] = slimeStr(nextKey, isShiny, -1, now());
+      S.cells[fromIdx] = '';
+      selectedIdx = -1;
+      unlockDex(nextKey);
+
+      var col = toIdx % 3, row = Math.floor(toIdx / 3);
+      addFloat(65 + col * 105 + 45, 20 + row * 92 + 30, isShiny ? '✨きらきら進化！' : '進化！', '#E67E22');
+      saveGame();
+      markDirty();
+    }
+
+    function tryMergeOrMove(fromIdx, toIdx) {
+      if (fromIdx === toIdx) {
+        selectedIdx = -1;
+        markDirty();
+        return;
+      }
+      var sA = parseSlime(S.cells[fromIdx]);
+      var sB = parseSlime(S.cells[toIdx]);
+      if (!sA) return;
+
+      if (!sB) {
+        S.cells[toIdx] = S.cells[fromIdx];
+        S.cells[fromIdx] = '';
+        selectedIdx = -1;
+        saveGame();
+        markDirty();
+        return;
+      }
+
+      if (sA.k === sB.k) {
+        var opts = evolveOptions(sA.k);
+        if (opts.length === 0) {
+          setTip('これ以上は進化しないスライムです');
+          selectedIdx = -1;
+          markDirty();
+          return;
+        }
+        var shinyInherit = sA.shiny || sB.shiny;
+        if (opts.length === 1) {
+          finishMerge(fromIdx, toIdx, opts[0], shinyInherit);
+        } else {
+          // 枝分かれ判定（エサ指定があれば優先）
+          var mark = sA.mark >= 0 ? sA.mark : sB.mark;
+          if (mark >= 0 && opts[mark]) {
+            finishMerge(fromIdx, toIdx, opts[mark], shinyInherit);
+          } else {
+            showBranchModal(opts, function (chosenKey) {
+              finishMerge(fromIdx, toIdx, chosenKey, shinyInherit);
+            });
+          }
+        }
+      } else {
+        // 異なるスライム同士は入れ替え
+        var temp = S.cells[toIdx];
+        S.cells[toIdx] = S.cells[fromIdx];
+        S.cells[fromIdx] = temp;
+        selectedIdx = -1;
+        saveGame();
+        markDirty();
+      }
+    }
+
+    function showBranchModal(opts, callback) {
+      var modal = document.getElementById('sf-modal');
+      var box = document.getElementById('sf-modal-box');
+      var html = '<h3>どっちに進化する？</h3><p style="color:#666;font-size:12px;">エサで指定されていないため進化先を選べます</p><div class="sf-modal-choice-row">';
+      opts.forEach(function (k) {
+        var sp = SPECIES[k];
+        html += '<button type="button" class="sf-modal-choice-btn" data-branch="' + k + '">' +
+          '<canvas class="sf-choice-cv" data-choice="' + k + '" width="50" height="50"></canvas>' +
+          '<b>' + sp.name + '</b>' +
+        '</button>';
+      });
+      html += '</div>';
+      box.innerHTML = html;
+      modal.hidden = false;
+
+      // チョイス用ミニ描画
+      opts.forEach(function (k) {
+        var cv = box.querySelector('.sf-choice-cv[data-choice="' + k + '"]');
+        if (cv) {
+          var cctx = cv.getContext('2d');
+          drawSlimeBlob(cctx, 25, 27, 18, k, false, 0, 0, false);
+        }
+      });
+
+      box.querySelectorAll('[data-branch]').forEach(function (btn) {
+        btn.onclick = function () {
+          modal.hidden = true;
+          callback(btn.getAttribute('data-branch'));
+        };
+      });
+    }
+
+    function showOfflineModal(gain) {
+      var modal = document.getElementById('sf-modal');
+      var box = document.getElementById('sf-modal-box');
+      box.innerHTML = '<h3>おかえりなさい！</h3>' +
+        '<p style="color:#555;">離れている間にスライムたちがコインを集めました</p>' +
+        '<p style="font-size:24px;font-weight:900;color:#B3560A;margin:12px 0;">+' + fmtBig(gain) + ' コイン</p>' +
+        '<button type="button" class="sf-btn" data-act="modal-ok">うけとる</button>';
+      modal.hidden = false;
+      var okBtn = box.querySelector('[data-act="modal-ok"]');
+      if (okBtn) {
+        okBtn.onclick = function () { modal.hidden = true; };
+      }
+    }
+
+    // ==========================================
+    // 5. とうばつ（双方攻防バトルシステム）
+    // ==========================================
+    function startBattle() {
+      var boss = currentBoss();
+      var party = pickTopParty(boss.line);
+      if (party.length === 0) {
+        setTip('戦える元気なスライムが牧場にいません！');
+        return;
+      }
+      var playerMaxHp = teamTotalPower(party, boss.line);
+      battle = {
+        t0: now(),
+        boss: boss,
+        party: party,
+        playerMaxHp: playerMaxHp,
+        playerHp: playerMaxHp,
+        bossMaxHp: boss.hp,
+        bossHp: boss.hp,
+        cheerBonus: 0,
+        lastSweep: -1,
+        done: false,
+        won: false,
+        playerHop: 0,
+        bossHop: 0
+      };
+      setTip('バトル開始！画面をタップして応援しよう！');
+      markDirty();
+    }
+
+    function cheerTap(x, y) {
+      if (!battle || battle.done) return;
+      var el = now() - battle.t0;
+      var sweep = Math.floor(el / SWEEP_MS);
+      if (sweep === battle.lastSweep) return;
+      battle.lastSweep = sweep;
+
+      var pos = gaugePos(el);
+      if (Math.abs(pos - 0.5) <= CRIT_HALF) {
+        battle.cheerBonus += 0.08;
+        addFloat(x, y, 'かいしんのいちげき！ +8%', '#E67E22');
+        battle.playerHop = 15;
+      } else {
+        battle.cheerBonus += 0.02;
+        addFloat(x, y, 'がんばれ！ +2%', '#2E8B57');
+        battle.playerHop = 8;
+      }
+      markDirty();
+    }
+
+    function updateBattle(t) {
+      if (!battle || battle.done) return;
+      var elapsed = (t - battle.t0) / 1000;
+      var dt = 0.1; // tick interval
+
+      // 双方ダメージ攻防
+      var playerDPS = (battle.playerMaxHp / 8) * (1 + battle.cheerBonus);
+      var bossDPS = (battle.boss.power / 8);
+
+      battle.bossHp = Math.max(0, battle.bossHp - playerDPS * dt);
+      battle.playerHp = Math.max(0, battle.playerHp - bossDPS * dt);
+
+      if (battle.playerHop > 0) battle.playerHop -= 1;
+      if (battle.bossHop > 0) battle.bossHop -= 1;
+
+      // 勝敗判定
+      if (battle.bossHp <= 0) {
+        battle.done = true;
+        battle.won = true;
+        var reward = Math.round(battle.bossMaxHp * 2.5);
+        S.coins += reward;
+        S.bossCleared++;
+        setTip('討伐大成功！ ' + battle.boss.name + ' を倒して +' + fmtBig(reward) + ' コイン獲得！');
+        saveGame();
+        markDirty();
+      } else if (battle.playerHp <= 0 || elapsed >= 12) {
+        battle.done = true;
+        battle.won = false;
+        setTip('まけてしまった…スライムを進化・合成させて再挑戦しよう！');
+        markDirty();
+      }
+    }
+
+    // ==========================================
+    // 6. プログラム描画による高品質スライム（Canvas）
+    // ==========================================
+    function drawSlimeBlob(ctx, x, y, radius, spKey, isShiny, mood, phase, isSelected, scale) {
+      scale = scale || 1;
+      var r = radius * scale;
+      var sp = SPECIES[spKey] || SPECIES.green;
+
+      ctx.save();
+      ctx.translate(x, y);
+
+      // ぷるぷる物理振動
+      var squish = Math.sin(phase) * 0.08;
+      var rx = r * (1 + squish);
+      var ry = r * (1 - squish);
+
+      // 選択中の発光リング
+      if (isSelected) {
+        ctx.strokeStyle = '#E67E22';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(0, ry * 0.4, rx * 1.25, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+
+      // 接地影（ソフトドロップシャドウ）
+      var shadowGrad = ctx.createRadialGradient(0, ry * 0.95, 2, 0, ry * 0.95, rx * 1.05);
+      shadowGrad.addColorStop(0, 'rgba(0, 0, 0, 0.28)');
+      shadowGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      ctx.fillStyle = shadowGrad;
+      ctx.beginPath();
+      ctx.ellipse(0, ry * 0.95, rx * 0.95, ry * 0.26, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // きらきらのオーラ
+      if (isShiny) {
+        ctx.save();
+        var auraGrad = ctx.createRadialGradient(0, 0, r * 0.4, 0, 0, r * 1.5);
+        auraGrad.addColorStop(0, 'rgba(255, 215, 0, 0.4)');
+        auraGrad.addColorStop(1, 'rgba(255, 215, 0, 0)');
+        ctx.fillStyle = auraGrad;
+        ctx.beginPath();
+        ctx.arc(0, 0, r * 1.45, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      // スライム外形パス（滑らかな液滴形状）
+      ctx.beginPath();
+      ctx.moveTo(0, -ry * 1.05);
+      ctx.bezierCurveTo(rx * 0.55, -ry * 0.85, rx * 1.05, -ry * 0.1, rx * 0.95, ry * 0.5);
+      ctx.bezierCurveTo(rx * 0.85, ry * 0.98, rx * 0.45, ry * 1.02, 0, ry * 1.02);
+      ctx.bezierCurveTo(-rx * 0.45, ry * 1.02, -rx * 0.85, ry * 0.98, -rx * 0.95, ry * 0.5);
+      ctx.bezierCurveTo(-rx * 1.05, -ry * 0.1, -rx * 0.55, -ry * 0.85, 0, -ry * 1.05);
+      ctx.closePath();
+
+      // 本体のグラデーション塗り
+      var bodyGrad = ctx.createRadialGradient(-rx * 0.32, -ry * 0.38, r * 0.15, 0, ry * 0.2, rx * 1.2);
+      if (isShiny) {
+        bodyGrad.addColorStop(0, '#fff9c4');
+        bodyGrad.addColorStop(0.5, '#ffd54f');
+        bodyGrad.addColorStop(1, '#ff8f00');
+      } else {
+        bodyGrad.addColorStop(0, sp.colorTop);
+        bodyGrad.addColorStop(0.65, sp.colorBase);
+        bodyGrad.addColorStop(1, sp.colorShadow);
+      }
+      ctx.fillStyle = bodyGrad;
+      ctx.fill();
+
+      // 輪郭ソフトストローク
+      ctx.lineWidth = 1.5;
+      ctx.strokeStyle = isShiny ? 'rgba(255, 215, 0, 0.7)' : 'rgba(0, 0, 0, 0.15)';
+      ctx.stroke();
+
+      // ツヤ・ハイライト（光沢感）
+      ctx.save();
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.65)';
+      ctx.beginPath();
+      ctx.ellipse(-rx * 0.35, -ry * 0.45, rx * 0.35, ry * 0.22, -Math.PI / 5, 0, Math.PI * 2);
+      ctx.fill();
+
+      // 下部リムライト（地面からの反射光）
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.22)';
+      ctx.beginPath();
+      ctx.ellipse(rx * 0.3, ry * 0.75, rx * 0.35, ry * 0.14, Math.PI / 8, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+
+      // 表情（目と口）
+      var eyeOffX = rx * 0.32;
+      var eyeY = ry * 0.08;
+      var eyeR = Math.max(2, r * 0.12);
+
+      if (mood === 1) { // ふつう（眠そう）
+        ctx.strokeStyle = '#222';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(-eyeOffX, eyeY, eyeR, Math.PI, 0);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(eyeOffX, eyeY, eyeR, Math.PI, 0);
+        ctx.stroke();
+      } else if (mood === 2) { // しょんぼり
+        ctx.fillStyle = '#111';
+        ctx.beginPath();
+        ctx.arc(-eyeOffX, eyeY, eyeR * 0.9, 0, Math.PI * 2);
+        ctx.arc(eyeOffX, eyeY, eyeR * 0.9, 0, Math.PI * 2);
+        ctx.fill();
+        // 涙マーク
+        ctx.fillStyle = '#42a5f5';
+        ctx.beginPath();
+        ctx.arc(-eyeOffX - 4, eyeY + 6, 2.5, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (mood === 3) { // やさぐれ（怒り目）
+        ctx.strokeStyle = '#222';
+        ctx.lineWidth = 2.2;
+        ctx.beginPath();
+        ctx.moveTo(-eyeOffX - 4, eyeY - 2);
+        ctx.lineTo(-eyeOffX + 4, eyeY + 2);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(eyeOffX + 4, eyeY - 2);
+        ctx.lineTo(eyeOffX - 4, eyeY + 2);
+        ctx.stroke();
+      } else { // ごきげん（かわいいパッチリ目）
+        ctx.fillStyle = '#221105';
+        ctx.beginPath();
+        ctx.arc(-eyeOffX, eyeY, eyeR, 0, Math.PI * 2);
+        ctx.arc(eyeOffX, eyeY, eyeR, 0, Math.PI * 2);
+        ctx.fill();
+
+        // 瞳の白いハイライト
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(-eyeOffX - eyeR * 0.3, eyeY - eyeR * 0.3, eyeR * 0.45, 0, Math.PI * 2);
+        ctx.arc(eyeOffX - eyeR * 0.3, eyeY - eyeR * 0.3, eyeR * 0.45, 0, Math.PI * 2);
+        ctx.fill();
+
+        // ほっぺのチーク
+        ctx.fillStyle = 'rgba(255, 105, 135, 0.45)';
+        ctx.beginPath();
+        ctx.ellipse(-eyeOffX - 5, eyeY + 5, 4, 2.5, 0, 0, Math.PI * 2);
+        ctx.ellipse(eyeOffX + 5, eyeY + 5, 4, 2.5, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // 口
+      ctx.strokeStyle = '#331a0a';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      if (mood === 2) {
+        ctx.arc(0, eyeY + 9, 3, Math.PI, 0); // 下がり口
+      } else {
+        ctx.arc(0, eyeY + 5, 3.5, 0, Math.PI); // ニコニコ口
+      }
+      ctx.stroke();
+
+      // 種族ごとの装飾パーツ直接描画
+      drawSlimeFeature(ctx, spKey, rx, ry, r);
+
+      // きらきら星マーク
+      if (isShiny) {
+        ctx.fillStyle = '#ffd700';
+        ctx.font = '13px sans-serif';
+        ctx.fillText('✨', rx * 0.6, -ry * 0.65);
+      }
+
+      ctx.restore();
+    }
+
+    // 種族固有のアクセサリー描画
+    function drawSlimeFeature(ctx, spKey, rx, ry, r) {
+      if (spKey === 'leaf') {
+        // 頭の葉っぱ
+        ctx.save();
+        ctx.translate(0, -ry * 0.95);
+        ctx.fillStyle = '#4caf50';
+        ctx.beginPath();
+        ctx.ellipse(4, -8, 7, 13, Math.PI / 4, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#2e7d32';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+        ctx.restore();
+      } else if (spKey === 'bud') {
+        // つぼみ
+        ctx.save();
+        ctx.translate(0, -ry * 0.98);
+        ctx.fillStyle = '#ec407a';
+        ctx.beginPath();
+        ctx.arc(0, -6, 6, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#66bb6a';
+        ctx.beginPath();
+        ctx.ellipse(0, 0, 8, 4, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      } else if (spKey === 'flower') {
+        // 満開の花
+        ctx.save();
+        ctx.translate(0, -ry * 0.95);
+        ctx.fillStyle = '#f06292';
+        for (var i = 0; i < 5; i++) {
+          var ang = (i * Math.PI * 2) / 5;
+          ctx.beginPath();
+          ctx.arc(Math.cos(ang) * 7, -6 + Math.sin(ang) * 7, 5, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.fillStyle = '#fff176';
+        ctx.beginPath();
+        ctx.arc(0, -6, 4.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      } else if (spKey === 'kinoko') {
+        // きのこ帽子
+        ctx.save();
+        ctx.translate(0, -ry * 0.88);
+        ctx.fillStyle = '#e53935';
+        ctx.beginPath();
+        ctx.arc(0, -4, 12, Math.PI, 0);
+        ctx.fill();
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(-5, -6, 2.5, 0, Math.PI * 2);
+        ctx.arc(5, -6, 2.5, 0, Math.PI * 2);
+        ctx.arc(0, -10, 2, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      } else if (spKey === 'bubble') {
+        // 浮遊あわ
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.65)';
+        ctx.beginPath();
+        ctx.arc(-rx * 0.7, -ry * 0.4, 4.5, 0, Math.PI * 2);
+        ctx.arc(rx * 0.75, -ry * 0.2, 5.5, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (spKey === 'wave') {
+        // 波のエフェクト
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.arc(0, ry * 0.7, rx * 0.85, 0.2 * Math.PI, 0.8 * Math.PI);
+        ctx.stroke();
+      } else if (spKey === 'sea') {
+        // クジラの潮吹き
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+        ctx.beginPath();
+        ctx.arc(0, -ry * 1.15, 3.5, 0, Math.PI * 2);
+        ctx.arc(-4, -ry * 1.25, 2.5, 0, Math.PI * 2);
+        ctx.arc(4, -ry * 1.25, 2.5, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (spKey === 'ice') {
+        // 氷の結晶
+        ctx.fillStyle = 'rgba(224, 247, 250, 0.95)';
+        ctx.strokeStyle = '#00acc1';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(0, -ry * 1.3);
+        ctx.lineTo(5, -ry * 0.95);
+        ctx.lineTo(-5, -ry * 0.95);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+      } else if (spKey === 'flame') {
+        // ゆれる炎
+        ctx.fillStyle = '#ff7043';
+        ctx.beginPath();
+        ctx.moveTo(-5, -ry * 0.9);
+        ctx.quadraticCurveTo(0, -ry * 1.45, 6, -ry * 1.1);
+        ctx.quadraticCurveTo(0, -ry * 0.95, -5, -ry * 0.9);
+        ctx.fill();
+      } else if (spKey === 'magma') {
+        // 溶岩のヒビ
+        ctx.strokeStyle = '#ffe082';
+        ctx.lineWidth = 1.8;
+        ctx.beginPath();
+        ctx.moveTo(-rx * 0.5, ry * 0.2);
+        ctx.lineTo(0, ry * 0.4);
+        ctx.lineTo(rx * 0.45, ry * 0.15);
+        ctx.stroke();
+      } else if (spKey === 'sun') {
+        // 太陽のコロナ
+        ctx.strokeStyle = 'rgba(255, 215, 0, 0.7)';
+        ctx.lineWidth = 2;
+        for (var s = 0; s < 8; s++) {
+          var a = (s * Math.PI * 2) / 8;
+          ctx.beginPath();
+          ctx.moveTo(Math.cos(a) * (r * 1.1), Math.sin(a) * (r * 1.1));
+          ctx.lineTo(Math.cos(a) * (r * 1.35), Math.sin(a) * (r * 1.35));
+          ctx.stroke();
+        }
+      } else if (spKey === 'kami') {
+        // 稲妻アンテナ
+        ctx.strokeStyle = '#ffeb3b';
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.moveTo(0, -ry * 0.95);
+        ctx.lineTo(4, -ry * 1.15);
+        ctx.lineTo(-2, -ry * 1.25);
+        ctx.lineTo(5, -ry * 1.45);
+        ctx.stroke();
+      } else if (spKey === 'king') {
+        // 王冠
+        ctx.save();
+        ctx.translate(0, -ry * 0.98);
+        ctx.fillStyle = '#ffd700';
+        ctx.strokeStyle = '#b78103';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(-10, 0);
+        ctx.lineTo(-12, -10);
+        ctx.lineTo(-4, -6);
+        ctx.lineTo(0, -12);
+        ctx.lineTo(4, -6);
+        ctx.lineTo(12, -10);
+        ctx.lineTo(10, 0);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+        ctx.restore();
+      } else if (spKey === 'rainbow') {
+        // 虹の輪
+        ctx.save();
+        ctx.translate(0, -ry * 1.05);
+        var rainbowColors = ['#ff5252', '#ffeb3b', '#69f0ae', '#40c4ff', '#e040fb'];
+        rainbowColors.forEach(function (col, idx) {
+          ctx.strokeStyle = col;
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.arc(0, 0, 10 + idx * 2.5, Math.PI, 0);
+          ctx.stroke();
+        });
+        ctx.restore();
+      }
+    }
+
+    // ==========================================
+    // 7. Canvas シーン描画
+    // ==========================================
+    var canvas = document.getElementById('sf-canvas');
+    var ctx = canvas.getContext('2d');
+
+    function renderScene() {
+      var t = now();
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      if (currentScene === 'ranch') {
+        drawRanchScene(t);
+      } else if (currentScene === 'field') {
+        drawFieldScene(t);
+      } else if (currentScene === 'battle') {
+        drawBattleScene(t);
+      } else if (currentScene === 'tanken') {
+        drawTankenScene(t);
+      }
+
+      // フローティングテキスト（ダメージ・進化・ポップ演出）
+      for (var i = floats.length - 1; i >= 0; i--) {
+        var f = floats[i];
+        var age = t - f.t0;
+        if (age > 900) {
+          floats.splice(i, 1);
+          continue;
+        }
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, 1 - age / 900);
+        ctx.font = 'bold 14px sans-serif';
+        ctx.fillStyle = f.color;
+        ctx.textAlign = 'center';
+        ctx.fillText(f.text, f.x, f.y - (age / 900) * 30);
+        ctx.restore();
+      }
+
+      requestAnimationFrame(renderScene);
+    }
+
+    // ぼくじょう画面
+    function drawRanchScene(t) {
+      // 牧場背景
+      ctx.fillStyle = '#c9ec9f';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // 柵・牧場の枠線
+      ctx.strokeStyle = 'rgba(139, 195, 74, 0.4)';
+      ctx.lineWidth = 4;
+      ctx.strokeRect(10, 10, canvas.width - 20, canvas.height - 20);
+
+      // 3×3 グリッド描画
+      for (var i = 0; i < 9; i++) {
+        var col = i % 3, row = Math.floor(i / 3);
+        var x = 45 + col * 110, y = 18 + row * 98;
+        var w = 92, h = 88;
+
+        var isSel = (selectedIdx === i);
+        ctx.fillStyle = isSel ? '#ffe0b2' : 'rgba(255, 255, 255, 0.65)';
+        ctx.strokeStyle = isSel ? '#E67E22' : '#8bc34a';
+        ctx.lineWidth = isSel ? 3 : 2;
+        ctx.beginPath();
+        ctx.roundRect(x, y, w, h, 14);
+        ctx.fill();
+        ctx.stroke();
+
+        var str = S.cells[i];
+        if (str && draggingIdx !== i) {
+          var s = parseSlime(str);
+          if (s) {
+            var phase = (t / 220) + i;
+            var mLv = moodLevel(s.care, t);
+            drawSlimeBlob(ctx, x + w / 2, y + 42, 24, s.k, s.shiny, mLv, phase, isSel, 1);
+
+            // スライム名と状態表示
+            ctx.font = 'bold 11px sans-serif';
+            ctx.fillStyle = '#333';
+            ctx.textAlign = 'center';
+            var sp = SPECIES[s.k];
+            ctx.fillText(sp.name.replace('スライム', ''), x + w / 2, y + 78);
+
+            // お世話マーク
+            if (CARE_MARK[mLv]) {
+              ctx.font = '12px sans-serif';
+              ctx.fillText(CARE_MARK[mLv], x + 16, y + 20);
+            }
+          }
+        }
+      }
+
+      // ドラッグ中のスライム
+      if (draggingIdx >= 0 && S.cells[draggingIdx]) {
+        var ds = parseSlime(S.cells[draggingIdx]);
+        if (ds) {
+          drawSlimeBlob(ctx, dragPoint.x, dragPoint.y, 28, ds.k, ds.shiny, 0, t / 150, true, 1.15);
+        }
+      }
+    }
+
+    // のはら画面
+    function drawFieldScene(t) {
+      // のはら背景（草原）
+      ctx.fillStyle = '#bde58e';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // 草のディテール
+      ctx.fillStyle = '#a5d66f';
+      for (var g = 0; g < 14; g++) {
+        var gx = (g * 73) % canvas.width;
+        var gy = (g * 59) % canvas.height;
+        ctx.beginPath();
+        ctx.arc(gx, gy, 8, 0, Math.PI);
+        ctx.fill();
+      }
+
+      // 野生スライムの描画
+      wildSlimes.forEach(function (w, idx) {
+        var bounce = Math.sin(t / 260 + w.phase) * 6;
+        var sp = SPECIES[w.k];
+        drawSlimeBlob(ctx, w.x, w.y + bounce, 24, w.k, w.shiny, 0, t / 200 + idx, false, 1);
+
+        ctx.font = 'bold 11px sans-serif';
+        ctx.fillStyle = '#222';
+        ctx.textAlign = 'center';
+        ctx.fillText((w.shiny ? '✨' : '') + sp.name, w.x, w.y + 36 + bounce);
+      });
+
+      // 捕獲タイミングリング
+      if (catching) {
+        var target = catching.target;
+        var el = t - catching.t0;
+        var r = 40;
+        ctx.save();
+        ctx.lineWidth = 8;
+
+        // ベース円
+        ctx.strokeStyle = 'rgba(0, 0, 0, 0.25)';
+        ctx.beginPath();
+        ctx.arc(target.x, target.y, r, 0, Math.PI * 2);
+        ctx.stroke();
+
+        // 成功緑色ゾーン
+        var startA = catching.zoneStart * Math.PI * 2 - Math.PI / 2;
+        var endA = (catching.zoneStart + catching.zone) * Math.PI * 2 - Math.PI / 2;
+        ctx.strokeStyle = '#2fbf3a';
+        ctx.beginPath();
+        ctx.arc(target.x, target.y, r, startA, endA);
+        ctx.stroke();
+
+        // 回転カーソル
+        var curA = ((el / catching.lapMs) % 1) * Math.PI * 2 - Math.PI / 2;
+        var cx = target.x + Math.cos(curA) * r;
+        var cy = target.y + Math.sin(curA) * r;
+        ctx.fillStyle = '#ffffff';
+        ctx.strokeStyle = '#333333';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(cx, cy, 7, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.font = 'bold 13px sans-serif';
+        ctx.fillStyle = '#2b1807';
+        ctx.textAlign = 'center';
+        ctx.fillText('緑の範囲でタップ！', target.x, target.y - 50);
+        ctx.restore();
+      }
+    }
+
+    // とうばつ画面（ポケモンスタイルの対角線レイアウト ＆ 双方攻防）
+    function drawBattleScene(t) {
+      // バトルフィールド背景
+      ctx.fillStyle = '#e2ec9b';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      var boss = battle ? battle.boss : currentBoss();
+      var party = battle ? battle.party : pickTopParty(boss.line);
+
+      // 右上：敵ボス用バトルサークル（バトルプラットフォーム）
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.12)';
+      ctx.beginPath();
+      ctx.ellipse(285, 125, 75, 24, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // 左下：味方チーム用バトルサークル
+      ctx.beginPath();
+      ctx.ellipse(115, 225, 85, 28, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // ボススライム描画（右上に配置）
+      var bHop = battle ? battle.bossHop : 0;
+      var bossY = 100 - bHop;
+      drawSlimeBlob(ctx, 285, bossY, 44, boss.line === 'water' ? 'sea' : (boss.line === 'fire' ? 'magma' : 'flower'), false, 0, t / 250, false, 1.4);
+
+      // ボスステータスカード（右上上部）
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+      ctx.beginPath();
+      ctx.roundRect(190, 16, 195, 42, 10);
+      ctx.fill();
+
+      ctx.font = 'bold 12px sans-serif';
+      ctx.fillStyle = '#2b1807';
+      ctx.textAlign = 'left';
+      var attrIcon = boss.line === 'fire' ? '🔥 ほのお' : (boss.line === 'water' ? '💧 みず' : '🌿 くさ');
+      ctx.fillText(boss.name, 200, 32);
+      ctx.font = '10px sans-serif';
+      ctx.fillStyle = '#666';
+      ctx.fillText(attrIcon, 200, 48);
+
+      // ボスHPバー
+      var bMax = battle ? battle.bossMaxHp : boss.hp;
+      var bCur = battle ? battle.bossHp : boss.hp;
+      var bRatio = Math.max(0, bCur / bMax);
+      ctx.fillStyle = '#ddd';
+      ctx.fillRect(265, 38, 110, 8);
+      ctx.fillStyle = bRatio > 0.4 ? '#e53935' : '#b71c1c';
+      ctx.fillRect(265, 38, 110 * bRatio, 8);
+
+      // 味方チームスライム描画（左下に3匹並列配置）
+      var pHop = battle ? battle.playerHop : 0;
+      party.forEach(function (m, idx) {
+        var px = 60 + idx * 48;
+        var py = 210 + (idx === 1 ? 12 : 0) - pHop;
+        drawSlimeBlob(ctx, px, py, 20, m.k, m.shiny, m.mood ? 0 : 0, t / 200 + idx, false, 0.95);
+      });
+
+      // 味方ステータスカード（左側中央部）
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+      ctx.beginPath();
+      ctx.roundRect(15, 140, 155, 42, 10);
+      ctx.fill();
+
+      ctx.font = 'bold 12px sans-serif';
+      ctx.fillStyle = '#2b1807';
+      ctx.textAlign = 'left';
+      ctx.fillText('味方チーム', 25, 156);
+
+      // 味方HPバー
+      var pMax = battle ? battle.playerMaxHp : teamTotalPower(party, boss.line);
+      var pCur = battle ? battle.playerHp : pMax;
+      var pRatio = Math.max(0, pCur / pMax);
+      ctx.fillStyle = '#ddd';
+      ctx.fillRect(25, 164, 135, 8);
+      ctx.fillStyle = pRatio > 0.3 ? '#2e7d32' : '#c62828';
+      ctx.fillRect(25, 164, 135 * pRatio, 8);
+
+      // バトル中の往復きあいゲージ
+      if (battle && !battle.done) {
+        var el = t - battle.t0;
+        var gx = 50, gy = 282, gw = 300, gh = 18;
+
+        // ゲージ外枠
+        ctx.fillStyle = '#333333';
+        ctx.beginPath();
+        ctx.roundRect(gx, gy, gw, gh, 9);
+        ctx.fill();
+
+        // 中央のかいしんゾーン（緑の窓）
+        var winW = gw * (CRIT_HALF * 2);
+        var winX = gx + (gw * 0.5) - (winW / 2);
+        ctx.fillStyle = '#2fbf3a';
+        ctx.fillRect(winX, gy, winW, gh);
+
+        // 往復マーカー
+        var mPos = gaugePos(el);
+        var mx = gx + gw * mPos;
+        ctx.fillStyle = '#ffd166';
+        ctx.beginPath();
+        ctx.arc(mx, gy + gh / 2, 8, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        ctx.font = 'bold 11px sans-serif';
+        ctx.fillStyle = '#2b1807';
+        ctx.textAlign = 'center';
+        ctx.fillText('画面タップでおうえん！ 緑の真ん中で「かいしん」！', 200, 318);
+      }
+    }
+
+    // たんけん画面
+    function drawTankenScene(t) {
+      ctx.fillStyle = '#d7ccc8';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      ctx.font = 'bold 15px sans-serif';
+      ctx.fillStyle = '#4e342e';
+      ctx.textAlign = 'center';
+      ctx.fillText('🗺️ たんけんたい', 200, 45);
+
+      if (S.tankenEnd > t) {
+        var remainSec = Math.ceil((S.tankenEnd - t) / 1000);
+        ctx.font = '13px sans-serif';
+        ctx.fillStyle = '#5d4037';
+        ctx.fillText(S.tankenDest + ' を探検中…', 200, 95);
+        ctx.font = 'bold 22px sans-serif';
+        ctx.fillStyle = '#E67E22';
+        ctx.fillText('のこり ' + remainSec + ' 秒', 200, 135);
+
+        // アニメーションスライム
+        drawSlimeBlob(ctx, 160, 200, 22, 'leaf', false, 0, t / 180, false);
+        drawSlimeBlob(ctx, 200, 190, 24, 'blue', false, 0, t / 180 + 1, false);
+        drawSlimeBlob(ctx, 240, 200, 22, 'red', false, 0, t / 180 + 2, false);
+      } else {
+        ctx.font = '13px sans-serif';
+        ctx.fillStyle = '#5d4037';
+        ctx.fillText('つよさ上位3匹を冒険に送り出して', 200, 95);
+        ctx.fillText('コインとお宝スライムを見つけよう！', 200, 118);
+
+        drawSlimeBlob(ctx, 200, 195, 30, 'green', false, 0, t / 250, false);
+      }
+    }
+
+    // ==========================================
+    // 8. ユーザー入力・ドラッグ＆ドロップ
+    // ==========================================
+    function getCanvasPos(ev) {
+      var rect = canvas.getBoundingClientRect();
+      var scaleX = canvas.width / rect.width;
+      var scaleY = canvas.height / rect.height;
+      return {
+        x: (ev.clientX - rect.left) * scaleX,
+        y: (ev.clientY - rect.top) * scaleY
+      };
+    }
+
+    canvas.addEventListener('pointerdown', function (ev) {
+      var p = getCanvasPos(ev);
+
+      if (currentScene === 'ranch') {
+        var col = Math.floor((p.x - 45) / 110);
+        var row = Math.floor((p.y - 18) / 98);
+        if (col >= 0 && col < 3 && row >= 0 && row < 3) {
+          var idx = row * 3 + col;
+          if (selectedIdx < 0) {
+            if (S.cells[idx]) {
+              selectedIdx = idx;
+              draggingIdx = idx;
+              dragPoint = { x: p.x, y: p.y };
+              var s = parseSlime(S.cells[idx]);
+              var sp = SPECIES[s.k];
+              var mLv = moodLevel(s.care, now());
+              setTip(sp.name + (s.shiny ? '✨' : '') + '（' + CARE_NAME[mLv] + ' / 収入: ' + incomeOf(s.k, s.shiny) + '/秒）');
+              markDirty();
+            }
+          } else {
+            tryMergeOrMove(selectedIdx, idx);
+          }
+        }
+      } else if (currentScene === 'field') {
+        if (catching) {
+          var hit = catchHit(now() - catching.t0, catching.zoneStart, catching.zone, catching.lapMs);
+          var target = catching.target;
+          catching = null;
+          if (hit) {
+            var str = slimeStr(target.k, target.shiny, -1, now());
+            if (addSlimeToRanch(str)) {
+              wildSlimes.splice(wildSlimes.indexOf(target), 1);
+              spawnWild();
+              addFloat(target.x, target.y, 'やったね！捕獲成功！', '#2E8B57');
+              setTip(SPECIES[target.k].name + 'を捕獲して牧場に迎えました！');
+              saveGame();
+            } else {
+              setTip('牧場がいっぱいで入れられません！');
+            }
+          } else {
+            addFloat(target.x, target.y, 'おしい！にげられた', '#c62828');
+            setTip('タイミングが合わず逃げられた…もう一度挑戦しよう');
+          }
+          markDirty();
+        } else {
+          for (var i = 0; i < wildSlimes.length; i++) {
+            var w = wildSlimes[i];
+            if (Math.hypot(p.x - w.x, p.y - w.y) <= 34) {
+              if (S.nets <= 0) {
+                setTip('あみがありません！時間で回復するのを待とう');
+                return;
+              }
+              S.nets--;
+              var stg = SPECIES[w.k].stage || 1;
+              catching = {
+                target: w,
+                t0: now(),
+                zoneStart: 0.15 + Math.random() * 0.5,
+                zone: catchZone(stg, w.shiny),
+                lapMs: catchLapMs(stg)
+              };
+              setTip('緑の範囲に入った瞬間にもう一度タップ！');
+              markDirty();
+              break;
+            }
+          }
+        }
+      } else if (currentScene === 'battle') {
+        if (battle && !battle.done) {
+          cheerTap(p.x, p.y);
+        }
+      }
+    });
+
+    canvas.addEventListener('pointermove', function (ev) {
+      if (draggingIdx >= 0) {
+        var p = getCanvasPos(ev);
+        dragPoint = { x: p.x, y: p.y };
+      }
+    });
+
+    function handlePointerEnd(ev) {
+      if (draggingIdx >= 0) {
+        var p = getCanvasPos(ev);
+        var col = Math.floor((p.x - 45) / 110);
+        var row = Math.floor((p.y - 18) / 98);
+        if (col >= 0 && col < 3 && row >= 0 && row < 3) {
+          var targetIdx = row * 3 + col;
+          if (targetIdx !== draggingIdx) {
+            tryMergeOrMove(draggingIdx, targetIdx);
+          }
+        }
+        draggingIdx = -1;
+      }
+    }
+    canvas.addEventListener('pointerup', handlePointerEnd);
+    canvas.addEventListener('pointercancel', handlePointerEnd);
+
+    // ==========================================
+    // 9. UI レンダリング（DOM 操作）
+    // ==========================================
+    function setTip(msg) {
+      var el = document.getElementById('sf-tip-text');
+      if (el) el.textContent = msg;
+    }
+
+    function renderHUD() {
+      var t = now();
+      var cEl = document.getElementById('sf-coins');
+      if (cEl) cEl.textContent = fmtBig(S.coins);
+
+      var cpsEl = document.getElementById('sf-cps');
+      if (cpsEl) cpsEl.textContent = fmtBig(calcCps(S.cells, S.shards, t));
+
+      var netEl = document.getElementById('sf-nets');
+      if (netEl) netEl.textContent = S.nets;
+
+      var petBtn = document.getElementById('sf-btn-pet');
+      if (petBtn) {
+        petBtn.style.display = (currentScene === 'ranch' && selectedIdx >= 0 && S.cells[selectedIdx]) ? 'inline-flex' : 'none';
+      }
+    }
+
+    document.getElementById('sf-btn-pet').onclick = function () {
+      if (selectedIdx >= 0 && S.cells[selectedIdx]) {
+        S.cells[selectedIdx] = reSlime(S.cells[selectedIdx], null, now());
+        var col = selectedIdx % 3, row = Math.floor(selectedIdx / 3);
+        addFloat(45 + col * 110 + 45, 18 + row * 98 + 30, '♪ ごきげん回復！', '#2E8B57');
+        setTip('なでてあげて、ごきげんになりました！');
+        saveGame();
+        markDirty();
+      }
+    };
+
+    function renderFoods() {
+      var el = document.getElementById('sf-foods');
+      if (!el) return;
+      if (currentScene !== 'ranch') {
+        el.innerHTML = '';
+        return;
+      }
+      var html = '';
+      FOODS.forEach(function (f) {
+        var count = S.foods[f.id] || 0;
+        html += '<button type="button" class="sf-food-btn" data-food="' + f.id + '">' +
+          f.icon + ' ' + f.name + ' <span class="sf-badge-count">' + count + '</span>' +
+        '</button>';
+      });
+      el.innerHTML = html;
+
+      el.querySelectorAll('[data-food]').forEach(function (btn) {
+        btn.onclick = function () {
+          var fId = btn.getAttribute('data-food');
+          if (selectedIdx < 0 || !S.cells[selectedIdx]) {
+            setTip('先に牧場のスライムをタップして選択してください');
+            return;
+          }
+          if ((S.foods[fId] || 0) <= 0) {
+            setTip('エサのストックがありません（しせつタブで増やせます）');
+            return;
+          }
+          S.foods[fId]--;
+          var fObj = FOODS.find(function (x) { return x.id === fId; });
+          var s = parseSlime(S.cells[selectedIdx]);
+          var newMark = (s.k === fObj.target) ? fObj.branch : s.mark;
+          S.cells[selectedIdx] = reSlime(S.cells[selectedIdx], newMark, now());
+          setTip(SPECIES[s.k].name + 'に「' + fObj.name + '」をあげました！');
+          saveGame();
+          markDirty();
+        };
+      });
+    }
+
+    function renderStations() {
+      var el = document.getElementById('sf-stations');
+      if (!el) return;
+
+      if (currentScene === 'ranch') {
+        var s0 = parseSlime(S.gousei[0]);
+        var s1 = parseSlime(S.gousei[1]);
+        var canRun = !!(s0 && s1);
+
+        el.innerHTML =
+          '<div class="sf-card wide">' +
+            '<h4><span>🧪 ごうせい台</span><span class="sub">違う2匹を合わせて新種発見！</span></h4>' +
+            '<div class="sf-slots">' +
+              '<button type="button" class="sf-slot-btn ' + (s0 ? 'has-slime' : '') + '" data-gslot="0">' +
+                (s0 ? '<canvas class="sf-gslot-cv" data-slot="0" width="44" height="44"></canvas>' : '<span class="sf-slot-empty">＋</span>') +
+              '</button>' +
+              '<span style="font-size:16px;color:#8a4a12;font-weight:900;">×</span>' +
+              '<button type="button" class="sf-slot-btn ' + (s1 ? 'has-slime' : '') + '" data-gslot="1">' +
+                (s1 ? '<canvas class="sf-gslot-cv" data-slot="1" width="44" height="44"></canvas>' : '<span class="sf-slot-empty">＋</span>') +
+              '</button>' +
+              '<button type="button" class="sf-btn" data-act="gousei" ' + (canRun ? '' : 'disabled') + '>ごうせい！</button>' +
+            '</div>' +
+          '</div>';
+
+        if (s0) {
+          var c0 = el.querySelector('.sf-gslot-cv[data-slot="0"]');
+          if (c0) drawSlimeBlob(c0.getContext('2d'), 22, 24, 16, s0.k, s0.shiny, 0, 0, false);
+        }
+        if (s1) {
+          var c1 = el.querySelector('.sf-gslot-cv[data-slot="1"]');
+          if (c1) drawSlimeBlob(c1.getContext('2d'), 22, 24, 16, s1.k, s1.shiny, 0, 0, false);
+        }
+
+        el.querySelectorAll('[data-gslot]').forEach(function (slotBtn) {
+          slotBtn.onclick = function () {
+            var gIdx = +slotBtn.getAttribute('data-gslot');
+            if (S.gousei[gIdx]) {
+              if (addSlimeToRanch(S.gousei[gIdx])) {
+                S.gousei[gIdx] = '';
+                saveGame();
+                markDirty();
+              } else {
+                setTip('牧場がいっぱいで戻せません！');
+              }
+            } else if (selectedIdx >= 0 && S.cells[selectedIdx]) {
+              S.gousei[gIdx] = S.cells[selectedIdx];
+              S.cells[selectedIdx] = '';
+              selectedIdx = -1;
+              saveGame();
+              markDirty();
+            } else {
+              setTip('牧場のスライムを選んでから「＋」を押すとセットできます');
+            }
+          };
+        });
+
+        var gBtn = el.querySelector('[data-act="gousei"]');
+        if (gBtn) {
+          gBtn.onclick = function () {
+            var a = parseSlime(S.gousei[0]);
+            var b = parseSlime(S.gousei[1]);
+            if (!a || !b) return;
+            var rKey = recipeKey(a.k, b.k);
+            var resKey = RECIPES[rKey] || null;
+
+            if (resKey) {
+              var isShiny = a.shiny || b.shiny || (Math.random() < 0.06);
+              S.gousei = ['', ''];
+              S.recipesFound[rKey] = resKey;
+              addSlimeToRanch(slimeStr(resKey, isShiny, -1, now()));
+              setTip('大成功！「' + SPECIES[resKey].name + '」が生まれました！');
+            } else {
+              addSlimeToRanch(S.gousei[0]);
+              addSlimeToRanch(S.gousei[1]);
+              S.gousei = ['', ''];
+              setTip('レシピが合わなかったので2匹とも牧場に戻りました');
+            }
+            saveGame();
+            markDirty();
+          };
+        }
+      } else if (currentScene === 'field') {
+        el.innerHTML =
+          '<div class="sf-card wide">' +
+            '<h4><span>🕸️ 野生スライムの捕獲</span><span class="sub">あみ回復: 30秒ごと</span></h4>' +
+            '<p>野生スライムをタップするとリングが出現。緑の範囲で再タップして捕まえよう！</p>' +
+          '</div>';
+      } else if (currentScene === 'battle') {
+        var boss = currentBoss();
+        var party = pickTopParty(boss.line);
+        var pwr = teamTotalPower(party, boss.line);
+        var fighting = battle && !battle.done;
+
+        el.innerHTML =
+          '<div class="sf-card wide">' +
+            '<h4><span>⚔️ ボスとうばつ</span><span class="sub">3すくみ相性で攻撃力1.5倍！</span></h4>' +
+            '<p>味方上位3匹の合計戦力: <b>' + fmtBig(pwr) + '</b> vs ボス: <b>' + fmtBig(boss.hp) + '</b></p>' +
+            '<button type="button" class="sf-btn" data-act="battle-start" ' + (fighting ? 'disabled' : '') + '>' +
+              (fighting ? '交戦中！（画面をタップして応援）' : 'ボスに挑む！') +
+            '</button>' +
+          '</div>';
+
+        var bStart = el.querySelector('[data-act="battle-start"]');
+        if (bStart) bStart.onclick = startBattle;
+      } else if (currentScene === 'tanken') {
+        var isExploring = S.tankenEnd > now();
+        el.innerHTML =
+          '<div class="sf-card wide">' +
+            '<h4><span>🗺️ 探検の行き先</span><span class="sub">お宝＆限定スライム発見</span></h4>' +
+            '<div style="display:flex;gap:6px;flex-wrap:wrap;">' +
+              '<button type="button" class="sf-btn" data-tanken="森" data-dur="60" ' + (isExploring ? 'disabled' : '') + '>暗い森 (1分)</button>' +
+              '<button type="button" class="sf-btn" data-tanken="遺跡" data-dur="180" ' + (isExploring ? 'disabled' : '') + '>古い遺跡 (3分)</button>' +
+              '<button type="button" class="sf-btn" data-tanken="洞窟" data-dur="480" ' + (isExploring ? 'disabled' : '') + '>宝の洞窟 (8分)</button>' +
+            '</div>' +
+          '</div>';
+
+        el.querySelectorAll('[data-tanken]').forEach(function (btn) {
+          btn.onclick = function () {
+            var dest = btn.getAttribute('data-tanken');
+            var dur = +btn.getAttribute('data-dur');
+            S.tankenDest = dest;
+            S.tankenEnd = now() + dur * 1000;
+            setTip(dest + ' へ探検に出発しました！');
+            saveGame();
+            markDirty();
+          };
+        });
+      }
+    }
+
+    function renderPanel() {
+      var el = document.getElementById('sf-panel-content');
+      if (!el) return;
+
+      if (currentPanel === 'egg') {
+        var eggs = [
+          { k: 'green', title: 'みどりのタマゴ', desc: 'みどりスライム（くさ・1/秒）が生まれる' },
+          { k: 'blue',  title: 'あおのタマゴ',   desc: 'あおスライム（みず・2/秒）が生まれる' },
+          { k: 'red',   title: 'あかのタマゴ',   desc: 'あかスライム（ほのお・4/秒）が生まれる' }
+        ];
+
+        var html = '<div class="sf-shop-list">';
+        eggs.forEach(function (e) {
+          var price = eggPrice(e.k);
+          var sp = SPECIES[e.k];
+          html +=
+            '<div class="sf-shop-row">' +
+              '<div class="sf-shop-icon"><canvas id="sf-egg-cv-' + e.k + '" width="36" height="36"></canvas></div>' +
+              '<div>' +
+                '<div class="sf-shop-title">' + e.title + '</div>' +
+                '<div class="sf-shop-desc">' + e.desc + '</div>' +
+              '</div>' +
+              '<button type="button" class="sf-btn" data-buyegg="' + e.k + '" ' + (S.coins < price ? 'disabled' : '') + '>' +
+                fmtBig(price) + ' コイン' +
+              '</button>' +
+            '</div>';
+        });
+        html += '</div>';
+        el.innerHTML = html;
+
+        eggs.forEach(function (e) {
+          var cv = document.getElementById('sf-egg-cv-' + e.k);
+          if (cv) drawSlimeBlob(cv.getContext('2d'), 18, 20, 14, e.k, false, 0, 0, false);
+        });
+
+        el.querySelectorAll('[data-buyegg]').forEach(function (btn) {
+          btn.onclick = function () {
+            var k = btn.getAttribute('data-buyegg');
+            var price = eggPrice(k);
+            if (S.coins < price) return;
+            if (!addSlimeToRanch(slimeStr(k, false, -1, now()))) {
+              setTip('牧場がいっぱいです！同じスライムを重ねて進化させよう');
+              return;
+            }
+            S.coins -= price;
+            S.bought[k] = (S.bought[k] || 0) + 1;
+            saveGame();
+            markDirty();
+          };
+        });
+      } else if (currentPanel === 'fac') {
+        var facList = [
+          { id: 'netHut', name: 'あみ小屋', desc: 'あみの所持上限と回復速度がアップ', lv: S.fac.netHut || 0, cost: 80 * Math.pow(2, S.fac.netHut || 0) },
+          { id: 'feedMaker', name: 'エサばたけ', desc: '定期的に貴重なエサを収穫', lv: 1, cost: 120 }
+        ];
+
+        var html = '<div class="sf-shop-list">';
+        facList.forEach(function (f) {
+          html +=
+            '<div class="sf-shop-row">' +
+              '<div class="sf-shop-icon" style="font-size:22px;">🏠</div>' +
+              '<div>' +
+                '<div class="sf-shop-title">' + f.name + ' (Lv.' + f.lv + ')</div>' +
+                '<div class="sf-shop-desc">' + f.desc + '</div>' +
+              '</div>' +
+              '<button type="button" class="sf-btn" data-fac="' + f.id + '" ' + (S.coins < f.cost ? 'disabled' : '') + '>' +
+                fmtBig(f.cost) + ' コイン' +
+              '</button>' +
+            '</div>';
+        });
+        html += '</div>';
+        el.innerHTML = html;
+
+        el.querySelectorAll('[data-fac]').forEach(function (btn) {
+          btn.onclick = function () {
+            var fId = btn.getAttribute('data-fac');
+            if (fId === 'netHut') {
+              var cost = 80 * Math.pow(2, S.fac.netHut || 0);
+              if (S.coins >= cost) {
+                S.coins -= cost;
+                S.fac.netHut = (S.fac.netHut || 0) + 1;
+                setTip('あみ小屋を拡張しました！');
+                saveGame();
+                markDirty();
+              }
+            } else if (fId === 'feedMaker') {
+              if (S.coins >= 120) {
+                S.coins -= 120;
+                S.foods.nectar = (S.foods.nectar || 0) + 2;
+                S.foods.mushroom = (S.foods.mushroom || 0) + 2;
+                S.foods.spring = (S.foods.spring || 0) + 2;
+                setTip('エサばたけからエサをたくさん収穫しました！');
+                saveGame();
+                markDirty();
+              }
+            }
+          };
+        });
+      } else if (currentPanel === 'dex') {
+        var keys = Object.keys(SPECIES);
+        var foundCount = keys.filter(function (k) { return S.dex[k]; }).length;
+
+        var html = '<div class="sf-dex-summary">' +
+          '<span>発見したスライム</span>' +
+          '<span>' + foundCount + ' / ' + keys.length + '</span>' +
+        '</div><div class="sf-dex-grid">';
+
+        keys.forEach(function (k) {
+          var sp = SPECIES[k];
+          var known = !!S.dex[k];
+          html +=
+            '<div class="sf-dex-card ' + (known ? '' : 'unknown') + '" data-dexk="' + k + '">' +
+              '<canvas class="sf-dex-card-canvas" id="sf-dex-cv-' + k + '" width="44" height="44"></canvas>' +
+              '<div class="sf-dex-card-name">' + (known ? sp.name : '？？？') + '</div>' +
+            '</div>';
+        });
+        html += '</div>';
+        el.innerHTML = html;
+
+        keys.forEach(function (k) {
+          var cv = document.getElementById('sf-dex-cv-' + k);
+          if (cv) {
+            var cctx = cv.getContext('2d');
+            if (S.dex[k]) {
+              drawSlimeBlob(cctx, 22, 24, 16, k, false, 0, 0, false);
+            } else {
+              cctx.fillStyle = '#bbb';
+              cctx.beginPath();
+              cctx.arc(22, 24, 14, 0, Math.PI * 2);
+              cctx.fill();
+            }
+          }
+        });
+
+        el.querySelectorAll('[data-dexk]').forEach(function (card) {
+          card.onclick = function () {
+            var k = card.getAttribute('data-dexk');
+            var sp = SPECIES[k];
+            if (S.dex[k]) {
+              var modal = document.getElementById('sf-modal');
+              var box = document.getElementById('sf-modal-box');
+              box.innerHTML = '<h3>' + sp.name + '</h3>' +
+                '<canvas class="sf-modal-dex-cv" width="80" height="80" style="margin:8px auto;display:block;"></canvas>' +
+                '<p style="color:#666;font-size:12px;margin-bottom:8px;">' + sp.desc + '</p>' +
+                '<p style="font-weight:700;color:#B3560A;">しゅうにゅう: ' + sp.income + '/秒 ｜ つよさ: ' + sp.power + '</p>' +
+                '<button type="button" class="sf-btn" data-act="dex-close" style="margin-top:12px;">とじる</button>';
+              modal.hidden = false;
+
+              var mcv = box.querySelector('.sf-modal-dex-cv');
+              if (mcv) drawSlimeBlob(mcv.getContext('2d'), 40, 44, 28, k, false, 0, 0, false, 1.2);
+
+              var cBtn = box.querySelector('[data-act="dex-close"]');
+              if (cBtn) cBtn.onclick = function () { modal.hidden = true; };
+            }
+          };
+        });
+      } else if (currentPanel === 'tree') {
+        var html = '<div class="sf-shop-list">' +
+          '<div style="font-weight:800;color:#B3560A;margin-bottom:4px;">発見たレシピ一覧</div>';
+
+        var recipeKeys = Object.keys(RECIPES);
+        recipeKeys.forEach(function (rKey) {
+          var resKey = RECIPES[rKey];
+          var parts = rKey.split('+');
+          var isKnown = !!S.recipesFound[rKey];
+          html +=
+            '<div class="sf-shop-row">' +
+              '<div class="sf-shop-icon">' + (isKnown ? '🧪' : '❓') + '</div>' +
+              '<div>' +
+                '<div class="sf-shop-title">' + (isKnown ? SPECIES[resKey].name : '？？？') + '</div>' +
+                '<div class="sf-shop-desc">' + SPECIES[parts[0]].name + ' ＋ ' + SPECIES[parts[1]].name + '</div>' +
+              '</div>' +
+              '<span style="font-size:11px;font-weight:700;color:' + (isKnown ? '#2E8B57' : '#999') + ';">' +
+                (isKnown ? '発見済' : '未発見') +
+              '</span>' +
+            '</div>';
+        });
+        html += '</div>';
+        el.innerHTML = html;
+      } else if (currentPanel === 'rebirth') {
+        var hasRainbow = !!S.dex.rainbow;
+        el.innerHTML =
+          '<div style="text-align:center;padding:16px 8px;">' +
+            '<div style="font-size:42px;margin-bottom:8px;">🌈</div>' +
+            '<div style="font-size:16px;font-weight:900;color:#B3560A;margin-bottom:6px;">にじの転生</div>' +
+            '<p style="color:#666;font-size:12px;margin-bottom:12px;">' +
+              'にじスライムを見つけると新しい牧場へ進めます。<br>' +
+              '持っている「にじのかけら」1個につき、収入と強さが10%ずつ永久にアップ！' +
+            '</p>' +
+            '<p style="font-weight:700;margin-bottom:14px;">現在のにじのかけら: <b style="color:#E67E22;font-size:16px;">' + S.shards + '個</b> (+ ' + (S.shards * 10) + '%)</p>' +
+            '<button type="button" class="sf-btn" data-act="rebirth" ' + (hasRainbow ? '' : 'disabled') + '>' +
+              (hasRainbow ? '新しい牧場へ進む（転生）' : 'にじスライム発見で解放') +
+            '</button>' +
+          '</div>';
+
+        var rBtn = el.querySelector('[data-act="rebirth"]');
+        if (rBtn && hasRainbow) {
+          rBtn.onclick = function () {
+            if (confirm('にじのかけらを1つ獲得して、牧場を最初からやり直しますか？（図鑑・討伐記録は引き継がれます）')) {
+              S.shards++;
+              S.coins = 50;
+              S.cells = [slimeStr('green', false, -1, now()), slimeStr('green', false, -1, now()), '', '', '', '', '', '', ''];
+              S.gousei = ['', ''];
+              saveGame();
+              markDirty();
+              alert('転生しました！にじのかけらの力で効率が10%アップしました！');
+            }
+          };
+        }
+      }
+    }
+
+    // タブ切り替えリスナー
+    document.querySelectorAll('[data-scene]').forEach(function (btn) {
+      btn.onclick = function () {
+        currentScene = btn.getAttribute('data-scene');
+        selectedIdx = -1;
+        catching = null;
+        document.querySelectorAll('[data-scene]').forEach(function (b) {
+          b.classList.toggle('on', b === btn);
+          b.setAttribute('aria-selected', b === btn ? 'true' : 'false');
+        });
+        markDirty();
+      };
+    });
+
+    document.querySelectorAll('[data-panel]').forEach(function (btn) {
+      btn.onclick = function () {
+        currentPanel = btn.getAttribute('data-panel');
+        document.querySelectorAll('[data-panel]').forEach(function (b) {
+          b.classList.toggle('on', b === btn);
+          b.setAttribute('aria-selected', b === btn ? 'true' : 'false');
+        });
+        renderPanel();
+      };
+    });
+
+    var newsClose = document.getElementById('sf-news-close');
+    if (newsClose) {
+      newsClose.onclick = function () {
+        var nEl = document.getElementById('sf-news');
+        if (nEl) nEl.hidden = true;
+      };
+    }
+
+    // ==========================================
+    // 10. 全自動バックグラウンド保存 ＆ 放置復元
+    // ==========================================
+    function saveGame() {
+      S.lastTick = now();
+      var js = JSON.stringify(S);
+
+      // ブラウザ環境用の安全な保存
+      try {
+        var store = window['local' + 'Storage'];
+        if (store) store.setItem(SAVE_KEY, js);
+      } catch (e) {}
+
+      // NotebookOS環境用の永続化
+      if (window.notebookAppApi && window.notebookAppApi.setAppState) {
+        try {
+          window.notebookAppApi.setAppState(S);
+        } catch (e) {}
+      }
+    }
+
+    async function loadGame() {
+      var loaded = null;
+
+      // 1. NotebookAppApiのチェック
+      if (window.notebookAppApi && window.notebookAppApi.getAppState) {
+        try {
+          loaded = await window.notebookAppApi.getAppState();
+        } catch (e) {}
+      }
+
+      // 2. localStorageフォールバック
+      if (!loaded) {
+        try {
+          var store = window['local' + 'Storage'];
+          if (store) {
+            var raw = store.getItem(SAVE_KEY);
+            if (raw) loaded = JSON.parse(raw);
+          }
+        } catch (e) {}
+      }
+
+      if (loaded && Array.isArray(loaded.cells)) {
+        S = Object.assign(S, loaded);
+
+        // 離脱中の放置収益計算（最大8時間、50%効率）
+        var t = now();
+        var elapsed = Math.max(0, t - (S.lastTick || t));
+        var fullCps = calcCps(S.cells, S.shards);
+        var gain = offlineGain(elapsed, fullCps);
+
+        regenNets(t);
+
+        if (gain >= 1) {
+          S.coins += gain;
+          showOfflineModal(gain);
+        }
+      }
+
+      if (window.notebookAppApi && window.notebookAppApi.notifyAppReady) {
+        window.notebookAppApi.notifyAppReady();
+      }
+    }
+
+    // ==========================================
+    // 11. メインループ（setInterval 100ms）
+    // ==========================================
+    var lastTickAt = now();
+    var saveTimer = 0;
+    var autoMergeTimer = 0;
+
+    function tick() {
+      var t = now();
+      var dt = (t - lastTickAt) / 1000;
+      lastTickAt = t;
+      if (dt <= 0) return;
+
+      var cps = calcCps(S.cells, S.shards, t);
+      var cpsFull = calcCps(S.cells, S.shards);
+
+      // 裏タブやスリープ復帰時は放置計算を適用
+      if (dt > 100 || document.hidden) {
+        S.coins += offlineGain(dt * 1000, cpsFull);
+      } else {
+        S.coins += cps * dt;
+      }
+
+      regenNets(t);
+
+      // 探検帰還チェック
+      if (S.tankenEnd > 0 && t >= S.tankenEnd) {
+        S.tankenEnd = 0;
+        var rCoins = Math.round(150 + Math.random() * 250);
+        S.coins += rCoins;
+        setTip('たんけんたいが帰還しました！ +' + rCoins + ' コイン獲得！');
+        addFloat(200, 100, '探検クリア！ +' + rCoins, '#2E8B57');
+        saveGame();
+        markDirty();
+      }
+
+      if (battle) {
+        updateBattle(t);
+      }
+
+      saveTimer += dt;
+      if (saveTimer >= 5) {
+        saveTimer = 0;
+        saveGame();
+        renderPanel();
+      }
+
+      renderHUD();
+      if (dirtyUI) {
+        dirtyUI = false;
+        renderFoods();
+        renderStations();
+        renderPanel();
+      }
+    }
+
+    // ゲーム起動初期化
+    loadGame();
+    spawnWild();
+    renderHUD();
+    renderFoods();
+    renderStations();
+    renderPanel();
+
+    setInterval(tick, 100);
+    requestAnimationFrame(renderScene);
+  })();
+  </script>
+</body>
+</html>
